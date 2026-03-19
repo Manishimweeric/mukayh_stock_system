@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
     Package,
@@ -14,12 +14,16 @@ import {
     Truck,
     Layers,
     BarChart3,
-    AlertCircle
+    AlertCircle,
+    TrendingUp,
+    Percent,
+    Info
 } from 'lucide-react';
 
 import { materialService, categoryService, supplierService } from '../../api';
 
 export default function AddMaterialForm() {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
@@ -32,7 +36,8 @@ export default function AddMaterialForm() {
         supplier: '',
         description: '',
         unit: 'KG',
-        unit_price: '',
+        buying_price: '',
+        selling_price: '',
         current_stock: '0',
         reorder_level: '10',
         maximum_stock: '1000',
@@ -83,6 +88,29 @@ export default function AddMaterialForm() {
         }));
     };
 
+    const calculateProfitMargin = () => {
+        const buying = parseFloat(formData.buying_price) || 0;
+        const selling = parseFloat(formData.selling_price) || 0;
+
+        if (buying > 0 && selling > 0) {
+            const margin = ((selling - buying) / selling) * 100;
+            return margin.toFixed(2);
+        }
+        return '0.00';
+    };
+
+    const calculatePotentialProfit = () => {
+        const stock = parseFloat(formData.current_stock) || 0;
+        const buying = parseFloat(formData.buying_price) || 0;
+        const selling = parseFloat(formData.selling_price) || 0;
+
+        if (stock > 0 && buying > 0 && selling > 0) {
+            const profit = (selling - buying) * stock;
+            return profit;
+        }
+        return 0;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -106,8 +134,18 @@ export default function AddMaterialForm() {
             return;
         }
 
-        if (!formData.unit_price || parseFloat(formData.unit_price) <= 0) {
-            toast.error("Unit price must be greater than 0");
+        if (!formData.buying_price || parseFloat(formData.buying_price) <= 0) {
+            toast.error("Buying price must be greater than 0");
+            return;
+        }
+
+        if (!formData.selling_price || parseFloat(formData.selling_price) <= 0) {
+            toast.error("Selling price must be greater than 0");
+            return;
+        }
+
+        if (parseFloat(formData.selling_price) <= parseFloat(formData.buying_price)) {
+            toast.error("Selling price must be greater than buying price");
             return;
         }
 
@@ -121,7 +159,8 @@ export default function AddMaterialForm() {
                 supplier: formData.supplier,
                 description: formData.description.trim(),
                 unit: formData.unit,
-                unit_price: parseFloat(formData.unit_price),
+                buying_price: parseFloat(formData.buying_price),
+                selling_price: parseFloat(formData.selling_price),
                 current_stock: parseFloat(formData.current_stock),
                 reorder_level: parseFloat(formData.reorder_level),
                 maximum_stock: parseFloat(formData.maximum_stock),
@@ -132,6 +171,7 @@ export default function AddMaterialForm() {
 
             if (result.id || result.success) {
                 toast.success('Material created successfully!');
+                navigate('/inventory/items/list');
             } else {
                 const errorMsg = typeof result.error === 'object'
                     ? Object.values(result.error).flat()[0]
@@ -162,6 +202,8 @@ export default function AddMaterialForm() {
 
     const stockStatus = getStockStatus();
     const StockStatusIcon = stockStatus.icon;
+    const profitMargin = calculateProfitMargin();
+    const potentialProfit = calculatePotentialProfit();
 
     if (loadingData) {
         return (
@@ -183,7 +225,7 @@ export default function AddMaterialForm() {
                         Add New Material
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Add a new construction material to inventory
+                        Add a new construction material with buying and selling prices
                     </p>
                 </div>
 
@@ -291,7 +333,7 @@ export default function AddMaterialForm() {
                                         <option value="">Select Supplier</option>
                                         {suppliers.map(supplier => (
                                             <option key={supplier.id} value={supplier.id}>
-                                                {supplier.company_name || supplier.name}
+                                                {supplier.name}
                                             </option>
                                         ))}
                                     </select>
@@ -324,14 +366,16 @@ export default function AddMaterialForm() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Unit Price *
+                                    Buying Price *
                                 </label>
                                 <div className="relative">
-
+                                    <div className="absolute left-3 top-3 text-gray-400">
+                                        <DollarSign className="w-5 h-5" />
+                                    </div>
                                     <input
                                         type="number"
-                                        name="unit_price"
-                                        value={formData.unit_price}
+                                        name="buying_price"
+                                        value={formData.buying_price}
                                         onChange={handleChange}
                                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
                                         placeholder="0.00"
@@ -341,10 +385,65 @@ export default function AddMaterialForm() {
                                     />
                                 </div>
                                 <p className="mt-1 text-xs text-gray-500">
-                                    Price per unit
+                                    Purchase price from supplier
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Selling Price *
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute left-3 top-3 text-gray-400">
+                                        <TrendingUp className="w-5 h-5" />
+                                    </div>
+                                    <input
+                                        type="number"
+                                        name="selling_price"
+                                        value={formData.selling_price}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        min="0.01"
+                                        required
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Price to customers
                                 </p>
                             </div>
                         </div>
+
+                        {/* Profit Preview */}
+                        {(formData.buying_price || formData.selling_price) && (
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+                                <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                                    <Info className="w-4 h-4 mr-2 text-blue-600" />
+                                    Profit Analysis
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <p className="text-xs text-gray-500">Profit Margin</p>
+                                        <p className={`text-lg font-bold ${parseFloat(profitMargin) >= 20 ? 'text-green-600' : parseFloat(profitMargin) >= 10 ? 'text-yellow-600' : 'text-orange-600'}`}>
+                                            {profitMargin}%
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500">Profit per Unit</p>
+                                        <p className="text-lg font-bold text-blue-600">
+                                            {formatCurrency((parseFloat(formData.selling_price) || 0) - (parseFloat(formData.buying_price) || 0))}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500">Potential Profit (Current Stock)</p>
+                                        <p className="text-lg font-bold text-green-600">
+                                            {formatCurrency(potentialProfit)}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -424,8 +523,6 @@ export default function AddMaterialForm() {
                             </div>
                         </div>
 
-
-
                         <div className="pt-6 border-t border-gray-200">
                             <div className="flex items-center justify-between">
                                 <div className="text-gray-600 text-sm">
@@ -469,3 +566,13 @@ export default function AddMaterialForm() {
         </div>
     );
 }
+
+// Helper function for currency formatting
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('rw-RW', {
+        style: 'currency',
+        currency: 'RWF',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(Math.round(amount || 0));
+};

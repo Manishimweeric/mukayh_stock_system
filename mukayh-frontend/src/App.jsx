@@ -20,6 +20,10 @@ import DemandForecast from './components/DemandForecast/DemandForecast.jsx';
 
 import AlertsList from './components/Alerts/AlertsList.jsx';
 import DashboardAdmin from './components/Dashboard/dashboard.jsx';
+import CustomersList from './components/Customers/CustomersList.jsx';
+import AddCustomerForm from './components/Customers/AddCustomerForm.jsx';
+import SalesList from './components/Sales/SalesList.jsx';
+import AddSaleForm from './components/Sales/AddSaleForm.jsx';
 
 
 function App() {
@@ -46,6 +50,11 @@ function App() {
             <Route path="stock/movement/list" element={<StockMovementsList />} />
             <Route path="forecasting" element={<DemandForecast />} />
             <Route path="alerts" element={<AlertsList />} />
+            <Route path="customers/list" element={<CustomersList />} />
+            <Route path="customers/add-new" element={<AddCustomerForm />} />
+            <Route path="sales/list" element={<SalesList />} />
+            <Route path="sales/add-new" element={<AddSaleForm />} />
+
           </Route>
         </Routes>
       </Router>

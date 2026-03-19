@@ -33,6 +33,33 @@ const menuConfig = [
     },
 
     {
+        name: "Customers",
+        icon: <Truck className="w-5 h-5" />,
+        path: "/inventory/customers/list",
+        roles: ["ADMIN", "MANAGER"],
+        hasSubItems: false,
+    },
+
+
+    {
+        name: "Sales",
+        icon: <TrendingUp className="w-5 h-5" />,
+        path: "/inventory/sales",
+        roles: ["ADMIN", "MANAGER", "STAFF"],
+        hasSubItems: true,
+        subItems: [
+            {
+                name: "list",
+                icon: <Activity className="w-4 h-4" />,
+                path: "/inventory/sales/list",
+                roles: ["ADMIN", "MANAGER", "STAFF"],
+            },
+
+
+        ],
+    },
+
+    {
         name: "Inventory",
         icon: <Package className="w-5 h-5" />,
         path: "/inventory/items",

@@ -470,7 +470,6 @@ export const alertService = {
     }
 };
 
-// Analytics Services
 export const analyticsService = {
     async getAllAnalytics() {
         try {
@@ -541,6 +540,240 @@ export const getCurrentUser = () => {
     }
 };
 
+export const customerService = {
+    async getAllCustomers(params = {}) {
+        try {
+            const res = await api.get("/customers/", { params });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getCustomerById(id) {
+        try {
+            const res = await api.get(`/customers/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async createCustomer(customerData) {
+        try {
+            const res = await api.post("/customers/", customerData);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async updateCustomer(id, customerData) {
+        try {
+            const res = await api.put(`/customers/${id}/`, customerData);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async deleteCustomer(id) {
+        try {
+            const res = await api.delete(`/customers/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getCustomerPurchaseHistory(id, params = {}) {
+        try {
+            const res = await api.get(`/customers/${id}/purchase-history/`, { params });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getCustomerSummary(id) {
+        try {
+            const res = await api.get(`/customers/${id}/summary/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async searchCustomers(searchTerm) {
+        try {
+            const res = await api.get('/customers/', {
+                params: { search: searchTerm }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    }
+};
+
+export const saleService = {
+    async getAllSales(params = {}) {
+        try {
+            const res = await api.get("/sales/", { params });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSaleById(id) {
+        try {
+            const res = await api.get(`/sales/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async createSale(saleData) {
+        try {
+            const res = await api.post("/sales/", saleData);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async updateSale(id, saleData) {
+        try {
+            const res = await api.put(`/sales/${id}/`, saleData);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async deleteSale(id) {
+        try {
+            const res = await api.delete(`/sales/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSaleReceipt(id) {
+        try {
+            const res = await api.get(`/sales/${id}/receipt/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSalesSummary(params = {}) {
+        try {
+            const res = await api.get("/sales/summary/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getTopSellingMaterials(params = {}) {
+        try {
+            const res = await api.get("/sales/top-selling/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getDailySales(params = {}) {
+        try {
+            const res = await api.get("/sales/daily/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSalesByCustomer(customerId, params = {}) {
+        try {
+            const res = await api.get("/sales/", {
+                params: { customer: customerId, ...params }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSalesBySession(session, year, params = {}) {
+        try {
+            const res = await api.get("/sales/", {
+                params: { session, year, ...params }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSalesByDateRange(startDate, endDate, params = {}) {
+        try {
+            const res = await api.get("/sales/", {
+                params: { start_date: startDate, end_date: endDate, ...params }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    }
+};
+
+export const saleItemService = {
+    async getAllSaleItems(params = {}) {
+        try {
+            const res = await api.get("/sale-items/", { params });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSaleItemById(id) {
+        try {
+            const res = await api.get(`/sale-items/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getItemsBySale(saleId) {
+        try {
+            const res = await api.get("/sale-items/", {
+                params: { sale: saleId }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getItemsByMaterial(materialId) {
+        try {
+            const res = await api.get("/sale-items/", {
+                params: { material: materialId }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    }
+};
+
 export const stockServices = {
     auth: authService,
     dashboard: dashboardService,
@@ -552,7 +785,28 @@ export const stockServices = {
     alerts: alertService,
     analytics: analyticsService,
     users: userService,
+    customers: customerService,
+    sales: saleService,
+    saleItems: saleItemService,
     getCurrentUser
 };
+
+export const getSessionFromDate = (date) => {
+    const month = new Date(date).getMonth() + 1;
+    if (month >= 1 && month <= 4) return 1;
+    if (month >= 5 && month <= 8) return 2;
+    return 3;
+};
+
+export const getSessionName = (session) => {
+    const sessions = {
+        1: 'Session 1 (Jan - Apr)',
+        2: 'Session 2 (May - Aug)',
+        3: 'Session 3 (Sep - Dec)'
+    };
+    return sessions[session] || `Session ${session}`;
+};
+
+
 
 export default api;
