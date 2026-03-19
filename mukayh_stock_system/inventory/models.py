@@ -1,4 +1,3 @@
-# models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
@@ -98,14 +97,27 @@ class Material(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name='materials')
     description = models.TextField(blank=True)
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES)
-    unit_price = models.DecimalField(
+    
+    # Price fields
+    buying_price = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
-        validators=[MinValueValidator(Decimal('0.01'))]
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Purchase price from supplier"
     )
+    selling_price = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Selling price to customers"
+    )
+    
+    # Stock fields
     current_stock = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     reorder_level = models.DecimalField(max_digits=12, decimal_places=2, default=10)
     maximum_stock = models.DecimalField(max_digits=12, decimal_places=2, default=1000)
+    
+    # Status
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -128,9 +140,26 @@ class Material(models.Model):
         return self.current_stock >= self.maximum_stock
     
     @property
-    def stock_value(self):
-        """Calculate total value of current stock"""
-        return self.current_stock * self.unit_price
+    def stock_value_at_cost(self):
+        """Calculate total value of current stock at buying price"""
+        return self.current_stock * self.buying_price
+    
+    @property
+    def stock_value_at_selling(self):
+        """Calculate total value of current stock at selling price"""
+        return self.current_stock * self.selling_price
+    
+    @property
+    def potential_profit(self):
+        """Calculate potential profit if all current stock is sold"""
+        return (self.selling_price - self.buying_price) * self.current_stock
+    
+    @property
+    def profit_margin_percentage(self):
+        """Calculate profit margin percentage"""
+        if self.selling_price > 0:
+            return ((self.selling_price - self.buying_price) / self.selling_price) * 100
+        return 0
     
     @property
     def stock_status(self):
@@ -157,7 +186,11 @@ class StockMovement(models.Model):
     quantity = models.DecimalField(max_digits=12, decimal_places=2)
     previous_stock = models.DecimalField(max_digits=12, decimal_places=2)
     new_stock = models.DecimalField(max_digits=12, decimal_places=2)
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    
+    # Use the current buying price at time of movement
+    buying_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    selling_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    
     reference_number = models.CharField(max_length=100, blank=True)
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='stock_movements')
@@ -171,11 +204,24 @@ class StockMovement(models.Model):
         return f"{self.material.name} - {self.movement_type} - {self.quantity}"
     
     @property
-    def total_value(self):
-        """Calculate value of this movement"""
-        if self.unit_price:
-            return self.quantity * self.unit_price
-        return self.quantity * self.material.unit_price
+    def total_value_at_buying(self):
+        """Calculate value of this movement at buying price"""
+        price = self.buying_price or self.material.buying_price
+        return self.quantity * price
+    
+    @property
+    def total_value_at_selling(self):
+        """Calculate value of this movement at selling price"""
+        price = self.selling_price or self.material.selling_price
+        return self.quantity * price
+    
+    def save(self, *args, **kwargs):
+        # Store the current prices at time of movement
+        if not self.buying_price:
+            self.buying_price = self.material.buying_price
+        if not self.selling_price:
+            self.selling_price = self.material.selling_price
+        super().save(*args, **kwargs)
 
 
 class DemandForecast(models.Model):
@@ -266,7 +312,9 @@ class Alert(models.Model):
 class StockAnalytics(models.Model):
     """Daily analytics and metrics"""
     date = models.DateField(unique=True)
-    total_stock_value = models.DecimalField(max_digits=15, decimal_places=2)
+    total_stock_value_at_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_stock_value_at_selling = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_potential_profit = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total_materials = models.IntegerField()
     low_stock_items = models.IntegerField()
     overstock_items = models.IntegerField()
@@ -283,3 +331,163 @@ class StockAnalytics(models.Model):
     
     def __str__(self):
         return f"Analytics - {self.date}"
+
+
+class Customer(models.Model):
+    name = models.CharField(max_length=200)
+    phone_number = models.CharField(max_length=15)
+    tin = models.CharField(max_length=50, blank=True, null=True, verbose_name="TIN Number")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'customers'
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} - {self.phone_number}"
+
+
+class Sale(models.Model):
+    SESSION_CHOICES = [
+        (1, 'Session 1 (Jan - Apr)'),
+        (2, 'Session 2 (May - Aug)'),
+        (3, 'Session 3 (Sep - Dec)'),
+    ]
+    
+    receipt_number = models.CharField(max_length=50, unique=True)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='sales')
+    
+    session = models.IntegerField(choices=SESSION_CHOICES, help_text="Trading session/period")
+    year = models.IntegerField(default=2024, help_text="Year of transaction")
+    
+    total_quantity = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_vat = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_profit = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='sales_created')
+    sale_date = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+    
+    class Meta:
+        db_table = 'sales'
+        ordering = ['-sale_date']
+    
+    def __str__(self):
+        session_name = dict(self.SESSION_CHOICES).get(self.session, f'Session {self.session}')
+        return f"Receipt {self.receipt_number} - {self.customer.name} - {session_name} {self.year}"
+    
+    def generate_receipt_number(self):
+        from datetime import datetime
+        import random
+        now = datetime.now()
+        random_num = random.randint(1000, 9999)
+        return f"REC-{now.strftime('%Y%m%d')}-{random_num}"
+    
+    def save(self, *args, **kwargs):
+        if not self.receipt_number:
+            self.receipt_number = self.generate_receipt_number()
+        
+        if not self.session and self.sale_date:
+            month = self.sale_date.month
+            if 1 <= month <= 4:
+                self.session = 1
+            elif 5 <= month <= 8:
+                self.session = 2
+            elif 9 <= month <= 12:
+                self.session = 3
+        
+        if not self.year and self.sale_date:
+            self.year = self.sale_date.year
+        
+        super().save(*args, **kwargs)
+    
+    def update_totals(self):
+        from django.db.models import Sum
+        
+        items = self.items.all()
+        
+        self.total_quantity = items.aggregate(total=Sum('quantity'))['total'] or 0
+        self.subtotal = items.aggregate(total=Sum('subtotal'))['total'] or 0
+        self.total_vat = items.aggregate(total=Sum('vat_amount'))['total'] or 0
+        self.total_amount = items.aggregate(total=Sum('total_amount'))['total'] or 0
+        self.total_cost = items.aggregate(total=Sum('cost_total'))['total'] or 0
+        self.total_profit = items.aggregate(total=Sum('profit'))['total'] or 0
+        
+        self.save()
+    
+    @property
+    def profit_margin_percentage(self):
+        """Calculate overall profit margin for the sale"""
+        if self.total_amount > 0:
+            return (self.total_profit / self.total_amount) * 100
+        return 0
+
+
+class SaleItem(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='items')
+    material = models.ForeignKey(Material, on_delete=models.PROTECT, related_name='sale_items')
+    
+    quantity = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # Prices at time of sale (can override material prices)
+    selling_price = models.DecimalField(max_digits=12, decimal_places=2)
+    buying_price = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # VAT
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=16.00)
+    vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # Totals
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)  # quantity * selling_price
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)  # subtotal + vat
+    
+    # Profit
+    cost_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)  # quantity * buying_price
+    profit = models.DecimalField(max_digits=15, decimal_places=2, default=0)  # total_amount - cost_total
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'sale_items'
+    
+    def __str__(self):
+        return f"{self.material.name} x {self.quantity}"
+    
+    def save(self, *args, **kwargs):
+        # Calculate if not already set
+        if not self.subtotal:
+            self.subtotal = self.quantity * self.selling_price
+        
+        if not self.vat_amount:
+            self.vat_amount = self.subtotal * (self.vat_rate / 100)
+        
+        if not self.total_amount:
+            self.total_amount = self.subtotal + self.vat_amount
+        
+        if not self.cost_total:
+            self.cost_total = self.quantity * self.buying_price
+        
+        if not self.profit:
+            self.profit = self.total_amount - self.cost_total
+        
+        super().save(*args, **kwargs)
+        
+        # Update sale totals
+        self.sale.update_totals()
+    
+    @property
+    def profit_margin_percentage(self):
+        """Calculate profit margin for this item"""
+        if self.total_amount > 0:
+            return (self.profit / self.total_amount) * 100
+        return 0
+    
+    @property
+    def markup_percentage(self):
+        """Calculate markup percentage based on buying price"""
+        if self.buying_price > 0:
+            return ((self.selling_price - self.buying_price) / self.buying_price) * 100
+        return 0

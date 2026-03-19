@@ -10,14 +10,43 @@ router.register(r'stock-movements', views.StockMovementViewSet, basename='stock-
 router.register(r'forecasts', views.DemandForecastViewSet, basename='forecast')
 router.register(r'alerts', views.AlertViewSet, basename='alert')
 router.register(r'analytics', views.AnalyticsViewSet, basename='analytics')
+router.register(r'customers', views.CustomerViewSet, basename='customer')
+router.register(r'sales', views.SaleViewSet, basename='sale')
+router.register(r'sale-items', views.SaleItemViewSet, basename='sale-item')
 
 urlpatterns = [
+    # Authentication endpoints
     path('auth/register/', views.register_user, name='register'),
     path('auth/login/', views.login_user, name='login'),
     path('auth/logout/', views.logout_user, name='logout'),
     path('auth/me/', views.current_user, name='current-user'),
-    path('dashboard/stats/', views.dashboard_stats, name='dashboard-stats'),
-    path('dashboard/trends/', views.stock_trends, name='stock-trends'),    
+    
+    # User management
     path('users/', views.get_all_users, name='get_all_users'),
+    
+    # Dashboard endpoints
+    path('dashboard/stats/', views.dashboard_stats, name='dashboard-stats'),
+    path('dashboard/trends/', views.stock_trends, name='stock-trends'),
+    path('dashboard/profit-analysis/', views.profit_analysis, name='profit-analysis'),
+    
+    # Material profit analysis
+    path('materials/profit-analysis/', views.MaterialViewSet.as_view({'get': 'profit_analysis'}), name='materials-profit-analysis'),
+    
+    # Stock movement value analysis
+    path('stock-movements/value-summary/', views.StockMovementViewSet.as_view({'get': 'value_summary'}), name='stock-movements-value-summary'),
+    
+    # Sale item profit summary
+    path('sale-items/profit-summary/', views.SaleItemViewSet.as_view({'get': 'profit_summary'}), name='sale-items-profit-summary'),
+    
+    # Sales analytics endpoints
+    path('sales/summary/', views.SaleViewSet.as_view({'get': 'summary'}), name='sales-summary'),
+    path('sales/top-selling/', views.SaleViewSet.as_view({'get': 'top_selling'}), name='top-selling'),
+    path('sales/daily/', views.SaleViewSet.as_view({'get': 'daily_sales'}), name='daily-sales'),
+    
+    # Customer analytics endpoints
+    path('customers/<int:pk>/purchase-history/', views.CustomerViewSet.as_view({'get': 'purchase_history'}), name='customer-purchase-history'),
+    path('customers/<int:pk>/summary/', views.CustomerViewSet.as_view({'get': 'summary'}), name='customer-summary'),
+    
+    # Include all router URLs
     path('', include(router.urls)),
 ]
