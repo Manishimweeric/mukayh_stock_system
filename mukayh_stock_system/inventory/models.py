@@ -116,6 +116,8 @@ class Material(models.Model):
     current_stock = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     reorder_level = models.DecimalField(max_digits=12, decimal_places=2, default=10)
     maximum_stock = models.DecimalField(max_digits=12, decimal_places=2, default=1000)
+
+    expiry_date = models.DateField(null=True, blank=True, verbose_name="Expiry Date")
     
     # Status
     is_active = models.BooleanField(default=True)
@@ -491,3 +493,149 @@ class SaleItem(models.Model):
         if self.buying_price > 0:
             return ((self.selling_price - self.buying_price) / self.buying_price) * 100
         return 0
+
+
+
+class SupplierOrder(models.Model):
+    """Model to track orders placed with suppliers"""
+
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('RECEIVED', 'Received by Supplier'),
+        ('ACCEPTED', 'Accepted by Supplier'),
+        ('DELIVERED', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
+    name = models.CharField(max_length=200, verbose_name="Order Name", help_text="A descriptive name for the order (e.g., 'Monthly Cement Order')")
+    order_number = models.CharField(max_length=50, unique=True, verbose_name="Order Number")
+    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name='orders')
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='supplier_orders')
+    order_date = models.DateTimeField(auto_now_add=True)
+    expected_delivery_date = models.DateField()
+    actual_delivery_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    notes = models.TextField(blank=True)
+
+    # Totals
+    total_quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+    class Meta:
+        db_table = 'supplier_orders'
+        ordering = ['-order_date']
+
+    def __str__(self):
+        return f"{self.name} ({self.order_number}) - {self.supplier.name}"
+
+    def generate_order_number(self):
+        from datetime import datetime
+        import random
+        now = datetime.now()
+        random_num = random.randint(1000, 9999)
+        return f"ORD-{now.strftime('%Y%m%d')}-{random_num}"
+
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = self.generate_order_number()
+
+        super().save(*args, **kwargs)
+
+    def update_totals(self):
+        from django.db.models import Sum
+        items = self.items.all()
+
+        self.total_quantity = items.aggregate(total=Sum('quantity'))['total'] or 0
+        self.total_cost = items.aggregate(total=Sum('total_cost'))['total'] or 0
+
+        self.save()
+
+    @property
+    def is_overdue(self):
+        """Check if the order is overdue"""
+        if self.status != 'DELIVERED' and self.expected_delivery_date:
+            from django.utils import timezone
+            return self.expected_delivery_date < timezone.now().date()
+        return False
+
+    @property
+    def is_fully_delivered(self):
+        """Check if the order is fully delivered"""
+        return self.status == 'DELIVERED'
+    
+
+class SupplierOrderItem(models.Model):
+    """
+    Model to track items in a supplier order.
+    Each item represents a material ordered from a supplier, including quantity, price, and delivery status.
+    """
+    order = models.ForeignKey(
+        'SupplierOrder',
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    material = models.ForeignKey(
+        'Material',
+        on_delete=models.PROTECT,
+        related_name='supplier_order_items'
+    )
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Quantity of the material ordered"
+    )
+    unit_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Unit price of the material at the time of ordering"
+    )
+    total_cost = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0,
+        help_text="Total cost (quantity * unit_price)"
+    )
+    received_quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Quantity received so far"
+    )
+    is_received = models.BooleanField(
+        default=False,
+        help_text="Whether the full quantity has been received"
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional notes about this item"
+    )
+
+    class Meta:
+        db_table = 'supplier_order_items'
+        ordering = ['-id']
+
+    def __str__(self):
+        return f"{self.material.name} x {self.quantity} (Order: {self.order.order_number})"
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to calculate total_cost automatically.
+        """
+        self.total_cost = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+
+    @property
+    def remaining_quantity(self):
+        """
+        Calculate the remaining quantity to be received.
+        """
+        return self.quantity - self.received_quantity
+
+    @property
+    def is_fully_received(self):
+        """
+        Check if the full quantity has been received.
+        """
+        return self.received_quantity >= self.quantity

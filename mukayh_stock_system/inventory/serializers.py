@@ -69,23 +69,58 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_material_count(self, obj):
         return obj.materials.filter(is_active=True).count()
 
-
 class SupplierSerializer(serializers.ModelSerializer):
-    """Serializer for suppliers"""
-    material_count = serializers.SerializerMethodField()
-    
+    """Serializer for suppliers, including user account creation"""
+    user_email = serializers.EmailField(write_only=True, required=False)
+    user_password = serializers.CharField(write_only=True, required=False, min_length=8)
+    user_first_name = serializers.CharField(write_only=True, required=False)
+    user_last_name = serializers.CharField(write_only=True, required=False)
+    user_phone = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = Supplier
         fields = [
-            'id', 'name', 'contact_person', 'email', 'phone',
-            'address', 'is_active', 'material_count', 'created_at', 'updated_at'
+            'id', 'name', 'contact_person', 'email', 'phone', 'address', 'is_active',
+            'user_email', 'user_password', 'user_first_name', 'user_last_name', 'user_phone',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-    
-    def get_material_count(self, obj):
-        return obj.materials.filter(is_active=True).count()
+        extra_kwargs = {
+            'email': {'required': False},
+            'phone': {'required': False},
+        }
 
+    def validate(self, data):
+        return data
 
+    def create(self, validated_data):
+        user_email = validated_data.pop('user_email', None)
+        user_password = validated_data.pop('user_password', None)
+        user_first_name = validated_data.pop('user_first_name', None)
+        user_last_name = validated_data.pop('user_last_name', None)
+        user_phone = validated_data.pop('user_phone', None)
+
+        supplier = Supplier.objects.create(**validated_data)
+
+        if user_email and user_password:
+            try:
+                user = User.objects.create_user(
+                    username=user_email.split('@')[0],
+                    email=user_email,
+                    password=user_password,
+                    first_name=user_first_name or supplier.contact_person,
+                    last_name=user_last_name or '',
+                    phone=user_phone or supplier.phone,
+                    role='SUPPLIER'
+                )
+                supplier.user = user
+                supplier.save()
+            except Exception as e:
+                # Log the error for debugging purposes
+                # You can use Django's logging framework in production
+                raise serializers.ValidationError(f"Failed to create user account: {str(e)}")
+
+        return supplier
 class MaterialListSerializer(serializers.ModelSerializer):
     """Serializer for material list view with buying and selling prices"""
     category_name = serializers.CharField(source='category.name', read_only=True)
@@ -431,7 +466,7 @@ class SaleListSerializer(serializers.ModelSerializer):
     profit_margin = serializers.SerializerMethodField()
     
     class Meta:
-        model = Sale
+        model = Sale    
         fields = [
             'id', 'receipt_number', 'customer', 'customer_name', 'customer_phone',
             'session', 'session_name', 'year', 'total_quantity',
@@ -690,3 +725,161 @@ class ProfitAnalysisSerializer(serializers.Serializer):
     previous_period_profit = serializers.DecimalField(max_digits=15, decimal_places=2)
     revenue_growth = serializers.DecimalField(max_digits=5, decimal_places=2)
     profit_growth = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+
+
+from rest_framework import serializers
+from .models import SupplierOrder, SupplierOrderItem
+
+class SupplierOrderItemSerializer(serializers.ModelSerializer):
+    """Serializer for supplier order items"""
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    material_sku = serializers.CharField(source='material.sku', read_only=True)
+    total_cost = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    remaining_quantity = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = SupplierOrderItem
+        fields = [
+            'id', 'material', 'material_name', 'material_sku',
+            'quantity', 'unit_price', 'total_cost',
+            'received_quantity', 'is_received', 'remaining_quantity'
+        ]
+        read_only_fields = ['id', 'total_cost', 'remaining_quantity']
+
+    def validate(self, data):
+        if 'quantity' in data and data['quantity'] <= 0:
+            raise serializers.ValidationError("Quantity must be greater than zero")
+        if 'unit_price' in data and data['unit_price'] <= 0:
+            raise serializers.ValidationError("Unit price must be greater than zero")
+        return data
+
+class SupplierOrderListSerializer(serializers.ModelSerializer):
+    """Serializer for listing supplier orders with summary info"""
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    items_count = serializers.SerializerMethodField()
+    is_overdue = serializers.BooleanField(read_only=True)
+    is_fully_delivered = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = SupplierOrder
+        fields = [
+            'id', 'name', 'order_number', 'supplier', 'supplier_name',
+            'created_by', 'created_by_name', 'order_date',
+            'expected_delivery_date', 'actual_delivery_date',
+            'status', 'total_quantity', 'total_cost',
+            'items_count', 'is_overdue', 'is_fully_delivered'
+        ]
+        read_only_fields = ['id', 'order_number', 'created_by', 'order_date', 'total_quantity', 'total_cost']
+
+    def get_items_count(self, obj):
+        return obj.items.count()
+
+class SupplierOrderDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for supplier orders with items"""
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    items = SupplierOrderItemSerializer(many=True, read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+    is_fully_delivered = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = SupplierOrder
+        fields = [
+            'id', 'name', 'order_number', 'supplier', 'supplier_name',
+            'created_by', 'created_by_name', 'order_date',
+            'expected_delivery_date', 'actual_delivery_date',
+            'status', 'total_quantity', 'total_cost',
+            'notes', 'items', 'is_overdue', 'is_fully_delivered'
+        ]
+        read_only_fields = ['id', 'order_number', 'created_by', 'order_date', 'total_quantity', 'total_cost']
+
+class SupplierOrderCreateUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating supplier orders with items"""
+    items = serializers.ListField(write_only=True, child=serializers.DictField())
+
+    class Meta:
+        model = SupplierOrder
+        fields = [
+            'id', 'name', 'supplier', 'expected_delivery_date',
+            'notes', 'items'
+        ]
+        read_only_fields = ['id']
+
+    def validate_items(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one item is required")
+
+        for index, item in enumerate(value):
+            if not item.get('material'):
+                raise serializers.ValidationError(f"Item {index + 1}: Material is required")
+
+            try:
+                quantity = Decimal(str(item.get('quantity', 0)))
+                if quantity <= 0:
+                    raise serializers.ValidationError(f"Item {index + 1}: Quantity must be greater than 0")
+            except:
+                raise serializers.ValidationError(f"Item {index + 1}: Invalid quantity")
+
+            try:
+                unit_price = Decimal(str(item.get('unit_price', 0)))
+                if unit_price <= 0:
+                    raise serializers.ValidationError(f"Item {index + 1}: Unit price must be greater than 0")
+            except:
+                raise serializers.ValidationError(f"Item {index + 1}: Invalid unit price")
+
+        return value
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        order = SupplierOrder.objects.create(**validated_data)
+
+        for item_data in items_data:
+            SupplierOrderItem.objects.create(
+                order=order,
+                material_id=item_data.get('material'),
+                quantity=item_data.get('quantity'),
+                unit_price=item_data.get('unit_price')
+            )
+
+        order.update_totals()
+        return order
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+
+        # Update order fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update items if provided
+        if items_data is not None:
+            # Remove existing items
+            instance.items.all().delete()
+
+            for item_data in items_data:
+                SupplierOrderItem.objects.create(
+                    order=instance,
+                    material_id=item_data.get('material'),
+                    quantity=item_data.get('quantity'),
+                    unit_price=item_data.get('unit_price')
+                )
+
+            # Update order totals
+            instance.update_totals()
+
+        return instance
+    
+
+# serializers.py
+class DashboardSummarySerializer(serializers.Serializer):
+    """Serializer for dashboard summary with all key metrics"""
+    inventory = serializers.DictField()
+    sales = serializers.DictField()
+    alerts = serializers.DictField()
+    stock_movements = serializers.DictField()
+    top_materials = serializers.ListField()
+    top_customers = serializers.ListField()
+    supplier_orders = serializers.DictField()
