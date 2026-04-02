@@ -48,7 +48,7 @@ const menuConfig = [
                 name: "Supplier",
                 icon: <FileText className="w-4 h-4" />,
                 path: "/inventory/supplier-orders/supplier",
-                roles: ["ADMIN", "SUPPLIER"]
+                roles: ["SUPPLIER"]
             },
         ]
     },
