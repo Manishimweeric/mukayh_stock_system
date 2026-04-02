@@ -134,6 +134,33 @@ export const dashboardService = {
         } catch (error) {
             return handleError(error);
         }
+    },
+
+    async getDashboardStats() {
+        try {
+            const res = await api.get("/dashboard/stats/");
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getStockTrends() {
+        try {
+            const res = await api.get("/dashboard/trends/");
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getDashboardSummary() {
+        try {
+            const res = await api.get("/dashboard/summary/");
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
     }
 };
 
@@ -183,7 +210,6 @@ export const categoryService = {
         }
     }
 };
-
 export const supplierService = {
     async getAllSuppliers(params = {}) {
         try {
@@ -198,6 +224,15 @@ export const supplierService = {
         try {
             const res = await api.get(`/suppliers/${id}/`);
             return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSupplierByEmail(email) {
+        try {
+            const res = await api.get("/suppliers/", { params: { email } });
+            return { success: true, data: res.data.results };
         } catch (error) {
             return handleError(error);
         }
@@ -315,7 +350,51 @@ export const materialService = {
         } catch (error) {
             return handleError(error);
         }
-    }
+    },
+    async getFilteredMaterials(params = {}) {
+        try {
+            const res = await api.get("/materials/filter/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getMaterialsByPriceRange(params = {}) {
+        try {
+            const res = await api.get("/materials/filter/by_price_range/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getMaterialsByProfitMargin(params = {}) {
+        try {
+            const res = await api.get("/materials/filter/by_profit_margin/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getStockAnalytics(params = {}) {
+        try {
+            const res = await api.get("/materials/filter/stock_analytics/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getExpiryAlerts(params = {}) {
+        try {
+            const res = await api.get("/materials/filter/expiry_alerts/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
 };
 
 // Stock Movement Services
@@ -729,7 +808,63 @@ export const saleService = {
         } catch (error) {
             return handleError(error);
         }
-    }
+    },
+
+    async getAllCustomersSummary(params = {}) {
+        try {
+            const res = await api.get("/customer-analytics/customer_summary/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getTopCustomers(params = {}) {
+        try {
+            const res = await api.get("/customer-analytics/top_customers/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getCustomerDetailedAnalytics(customerId, params = {}) {
+        try {
+            const res = await api.get(`/customer-analytics/${customerId}/detailed_analytics/`, { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getTopSellingMaterialsDetailed(params = {}) {
+        try {
+            const res = await api.get("/material-sales-analytics/top_selling_materials_detailed/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getMaterialPerformanceComparison(materialId) {
+        try {
+            const res = await api.get(`/material-sales-analytics/material_performance_comparison/`, {
+                params: { material_id: materialId }
+            });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getMaterialsRanking(params = {}) {
+        try {
+            const res = await api.get("/material-sales-analytics/materials_ranking/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
 };
 
 export const saleItemService = {
@@ -771,8 +906,159 @@ export const saleItemService = {
         } catch (error) {
             return handleError(error);
         }
+    },
+
+};
+
+export const supplierOrderService = {
+    async getAllSupplierOrders(params = {}) {
+        try {
+            const res = await api.get("/supplier-orders/", { params });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSupplierOrderById(id) {
+        try {
+            const res = await api.get(`/supplier-orders/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async createSupplierOrder(orderData) {
+        try {
+            const res = await api.post("/supplier-orders/", orderData);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async updateSupplierOrder(id, orderData) {
+        try {
+            const res = await api.put(`/supplier-orders/${id}/`, orderData);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async deleteSupplierOrder(id) {
+        try {
+            const res = await api.delete(`/supplier-orders/${id}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async markOrderAsReceived(id) {
+        try {
+            const res = await api.post(`/supplier-orders/${id}/receive/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSupplierOrderSummary(params = {}) {
+        try {
+            const res = await api.get("/supplier-orders/summary/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getItemsByOrder(orderId) {
+        try {
+            const res = await api.get(`/supplier-orders/${orderId}/items/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getItemsByMaterial(materialId) {
+        try {
+            const res = await api.get("/supplier-orders/", {
+                params: { material: materialId }
+            });
+            return { success: true, data: res.data.results };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getOrdersBySupplier(supplierId) {
+        try {
+            const res = await api.get(`/supplier-orders/by-supplier/${supplierId}/`);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+    async updateSupplierOrderStatus(orderId, data) {
+        try {
+            const res = await api.patch(`/supplier-orders/${orderId}/update-status/`, data);
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+};
+
+
+export const productService = {
+    async getTopSellingMaterials(params = {}) {
+        try {
+            const res = await api.get("/products/top-selling/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getMaterialMovementAnalysis(params = {}) {
+        try {
+            const res = await api.get("/products/movement-analysis/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getSystemRecommendations(params = {}) {
+        try {
+            const res = await api.get("/products/recommendations/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+
+    async getExpiredProductsNotification(params = {}) {
+        try {
+            const res = await api.get("/products/expired-notifications/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
+    async getTopCustomers(params = {}) {
+        try {
+            const res = await api.get("/customers/top/", { params });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
     }
 };
+
 
 export const stockServices = {
     auth: authService,

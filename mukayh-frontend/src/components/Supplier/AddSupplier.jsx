@@ -12,7 +12,11 @@ import {
     Loader2,
     Truck,
     CheckCircle,
-    XCircle
+    XCircle,
+    Lock,
+    Eye,
+    EyeOff,
+    ShieldCheck
 } from 'lucide-react';
 
 import { supplierService } from '../../api';
@@ -20,6 +24,7 @@ import { supplierService } from '../../api';
 export default function AddSupplierForm() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -27,6 +32,7 @@ export default function AddSupplierForm() {
         email: '',
         phone: '',
         address: '',
+        password: '',
         is_active: true
     });
 
@@ -61,21 +67,39 @@ export default function AddSupplierForm() {
             return;
         }
 
+        if (!formData.password.trim()) {
+            toast.error("Password is required");
+            return;
+        }
+
+        if (formData.password.length < 8) {
+            toast.error("Password must be at least 8 characters");
+            return;
+        }
+
         setLoading(true);
 
         try {
+            const nameParts = formData.contact_person.trim().split(' ');
+            const userFirstName = nameParts[0];
+            const userLastName = nameParts.slice(1).join(' ') || '-';
+
             const supplierData = {
                 name: formData.name.trim(),
                 contact_person: formData.contact_person.trim(),
                 email: formData.email.trim(),
                 phone: formData.phone.trim(),
                 address: formData.address.trim(),
-                is_active: formData.is_active
+                is_active: formData.is_active,
+                user_email: formData.email.trim(),
+                user_first_name: formData.name.trim(),
+                user_last_name: userLastName,
+                user_password: formData.password,
             };
 
             const result = await supplierService.createSupplier(supplierData);
 
-            if (result.id || result.success) {
+            if (result.success) {
                 toast.success('Supplier created successfully!');
                 navigate('/inventory/suppliers/list');
             } else {
@@ -92,8 +116,17 @@ export default function AddSupplierForm() {
         }
     };
 
+    const isSubmitDisabled =
+        loading ||
+        !formData.name.trim() ||
+        !formData.contact_person.trim() ||
+        !formData.email.trim() ||
+        !formData.phone.trim() ||
+        !formData.password.trim();
+
     return (
         <div className="space-y-3 max-w-4xl mx-auto">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -117,97 +150,113 @@ export default function AddSupplierForm() {
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Supplier Name *
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-3 text-gray-400">
-                                        <Building className="w-5 h-5" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                                        placeholder="ABC Construction Supplies"
-                                        required
-                                        maxLength={200}
-                                    />
-                                </div>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Maximum 200 characters
-                                </p>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Contact Person *
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-3 text-gray-400">
-                                        <User className="w-5 h-5" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        name="contact_person"
-                                        value={formData.contact_person}
-                                        onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                                        placeholder="John Doe"
-                                        required
-                                        maxLength={100}
-                                    />
-                                </div>
-                            </div>
+                        {/* ── Supplier Info ── */}
+                        <div>
+                            <h2 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <Building className="w-4 h-4 text-blue-500" />
+                                Supplier Information
+                            </h2>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Email Address *
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-3 text-gray-400">
-                                        <Mail className="w-5 h-5" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Supplier Name */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Supplier Name *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3 text-gray-400">
+                                            <Building className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                            placeholder="ABC Construction Supplies"
+                                            required
+                                            maxLength={200}
+                                        />
                                     </div>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                                        placeholder="contact@supplier.com"
-                                        required
-                                    />
+                                    <p className="mt-1 text-xs text-gray-500">Maximum 200 characters</p>
                                 </div>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Phone Number *
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-3 text-gray-400">
-                                        <Phone className="w-5 h-5" />
+                                {/* Contact Person */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Contact Person *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3 text-gray-400">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="contact_person"
+                                            value={formData.contact_person}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                            placeholder="John Doe"
+                                            required
+                                            maxLength={100}
+                                        />
                                     </div>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                                        placeholder="+1 (555) 123-4567"
-                                        required
-                                        maxLength={15}
-                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        First and last name — used for the user account
+                                    </p>
                                 </div>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    Maximum 15 characters
-                                </p>
+
+                                {/* Email */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Email Address *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3 text-gray-400">
+                                            <Mail className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                            placeholder="contact@supplier.com"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Also used as the supplier's login email
+                                    </p>
+                                </div>
+
+                                {/* Phone */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Phone Number *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3 text-gray-400">
+                                            <Phone className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                            placeholder="+1 (555) 123-4567"
+                                            required
+                                            maxLength={15}
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">Maximum 15 characters</p>
+                                </div>
                             </div>
                         </div>
 
+                        {/* Address */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Address
@@ -225,15 +274,76 @@ export default function AddSupplierForm() {
                                     placeholder="123 Main Street, City, State, ZIP Code"
                                 />
                             </div>
-                            <p className="mt-1 text-xs text-gray-500">
-                                Full address of the supplier
-                            </p>
+                            <p className="mt-1 text-xs text-gray-500">Full address of the supplier</p>
                         </div>
 
+                        {/* ── User Account Section ── */}
+                        <div className="bg-blue-50 rounded-lg p-5 border border-blue-100">
+                            <h2 className="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-blue-500" />
+                                Supplier Login Account
+                            </h2>
+                            <p className="text-xs text-gray-500 mb-4">
+                                A login account will be created for this supplier using their email and the password below.
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Login Email — readonly derived */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Login Email
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3 text-gray-400">
+                                            <Mail className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            readOnly
+                                            className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
+                                            placeholder="Auto-filled from email above"
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-400">Copied from supplier email</p>
+                                </div>
+
+                                {/* Password */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Account Password *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute left-3 top-3 text-gray-400">
+                                            <Lock className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                            placeholder="Min. 8 characters"
+                                            required
+                                            minLength={8}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(v => !v)}
+                                            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── Status ── */}
                         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-700 mb-3">
-                                Supplier Status
-                            </h3>
+                            <h3 className="text-sm font-medium text-gray-700 mb-3">Supplier Status</h3>
                             <div className="flex items-center justify-between">
                                 <div>
                                     <span className="text-xs text-gray-500 uppercase">Account Status</span>
@@ -241,12 +351,12 @@ export default function AddSupplierForm() {
                                         {formData.is_active ? (
                                             <span className="flex items-center text-green-600">
                                                 <CheckCircle className="w-4 h-4 mr-2" />
-                                                Active - Can supply materials
+                                                Active — Can supply materials
                                             </span>
                                         ) : (
                                             <span className="flex items-center text-red-600">
                                                 <XCircle className="w-4 h-4 mr-2" />
-                                                Inactive - Cannot supply materials
+                                                Inactive — Cannot supply materials
                                             </span>
                                         )}
                                     </p>
@@ -267,6 +377,7 @@ export default function AddSupplierForm() {
                             </div>
                         </div>
 
+                        {/* ── Footer ── */}
                         <div className="pt-6 border-t border-gray-200">
                             <div className="flex items-center justify-between">
                                 <div className="text-gray-600 text-sm">
@@ -286,7 +397,7 @@ export default function AddSupplierForm() {
                                     </Link>
                                     <button
                                         type="submit"
-                                        disabled={loading || !formData.name.trim() || !formData.contact_person.trim() || !formData.email.trim() || !formData.phone.trim()}
+                                        disabled={isSubmitDisabled}
                                         className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                                     >
                                         {loading ? (
@@ -304,6 +415,7 @@ export default function AddSupplierForm() {
                                 </div>
                             </div>
                         </div>
+
                     </form>
                 </div>
             </div>

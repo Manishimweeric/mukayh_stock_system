@@ -5,7 +5,7 @@ import {
     BarChart3, Users, Settings, Bell, HelpCircle, LogOut,
     Menu, X, Search, ChevronDown, Plus,
     FileText, Download, Upload, RefreshCw, Tag, Warehouse,
-    Activity, PieChart, LineChart
+    Activity, PieChart, LineChart, BarChart
 } from "lucide-react";
 import { toast } from 'react-toastify';
 import { authService, getCurrentUser } from '../../api';
@@ -28,9 +28,31 @@ const menuConfig = [
         name: "Suppliers",
         icon: <Truck className="w-5 h-5" />,
         path: "/inventory/suppliers/list",
-        roles: ["ADMIN", "MANAGER"],
-        hasSubItems: false,
+        roles: ["ADMIN", "MANAGER", "SUPPLIER"],
+        hasSubItems: true,
+        subItems: [
+            {
+                name: "Suppliers List",
+                icon: <Users className="w-4 h-4" />,
+                path: "/inventory/suppliers/list",
+                roles: ["ADMIN", "MANAGER"]
+            },
+
+            {
+                name: "Supplier Orders",
+                icon: <FileText className="w-4 h-4" />,
+                path: "/inventory/supplier-orders/list",
+                roles: ["ADMIN", "MANAGER"]
+            },
+            {
+                name: "Supplier",
+                icon: <FileText className="w-4 h-4" />,
+                path: "/inventory/supplier-orders/supplier",
+                roles: ["ADMIN", "SUPPLIER"]
+            },
+        ]
     },
+
 
     {
         name: "Customers",
@@ -49,12 +71,29 @@ const menuConfig = [
         hasSubItems: true,
         subItems: [
             {
-                name: "list",
+                name: "Comprehensive Analytics",
+                icon: <PieChart className="w-4 h-4" />,
+                path: "/inventory/sales/comprehensive",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Analytics",
+                icon: <LineChart className="w-4 h-4" />,
+                path: "/inventory/sales/analytics",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Summary",
+                icon: <BarChart3 className="w-4 h-4" />,
+                path: "/inventory/sales/summary",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Sales List",
                 icon: <Activity className="w-4 h-4" />,
                 path: "/inventory/sales/list",
                 roles: ["ADMIN", "MANAGER", "STAFF"],
             },
-
 
         ],
     },
@@ -90,6 +129,19 @@ const menuConfig = [
                 path: "/inventory/categories/list",
                 roles: ["ADMIN", "MANAGER"],
             },
+            {
+                name: "Inventory Analytics",
+                icon: <BarChart className="w-4 h-4" />,
+                path: "/inventory/analytics/products",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Materials Reports",
+                icon: <BarChart className="w-4 h-4" />,
+                path: "/inventory/analytics/materials",
+                roles: ["ADMIN", "MANAGER"],
+            },
+
         ],
     },
     {
@@ -375,7 +427,7 @@ const InventoryLayout = ({ activePage, onPageChange }) => {
                                 </button>
 
                                 {item.hasSubItems && expandedMenus[item.path] && (
-                                    <div className="ml-12 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                                    <div className="ml-5 mt-1 space-y-1 animate-in slide-in-from-top-2 duration-200">
                                         {item.subItems.map((subItem, subIndex) => (
                                             <button
                                                 key={`${subItem.path}-${subIndex}`}
@@ -412,18 +464,6 @@ const InventoryLayout = ({ activePage, onPageChange }) => {
                         ))}
                     </nav>
 
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0F172A] border-t border-slate-800">
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-all border border-slate-800"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        <span>Sign Out</span>
-                    </button>
-                    <div className="mt-3 text-center text-xs text-slate-500">
-                        <p>© {new Date().getFullYear()} StockWise v2.0</p>
-                    </div>
                 </div>
             </aside>
 
@@ -523,7 +563,7 @@ const InventoryLayout = ({ activePage, onPageChange }) => {
                         </div>
                     </div>
                 </header>
-                <main className="max-w-8xl ml-24 mr-24 mx-auto p-6">
+                <main className="max-w-8xl ml-2 mr-2 mx-auto p-6">
                     <Outlet />
                 </main>
             </div>

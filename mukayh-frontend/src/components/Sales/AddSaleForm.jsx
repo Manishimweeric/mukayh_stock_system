@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { saleService, customerService, materialService } from '../../api';
 
-// Helper function defined BEFORE the component
 const getCurrentSession = () => {
     const month = new Date().getMonth() + 1;
     if (month >= 1 && month <= 4) return 1;
@@ -30,7 +29,6 @@ const getCurrentSession = () => {
     return 3;
 };
 
-// Helper function for currency formatting
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('rw-RW', {
         style: 'currency',
@@ -65,7 +63,7 @@ export default function AddSaleForm() {
         material: '',
         quantity: 1,
         selling_price: '',
-        vat_rate: 18 // Fixed at 18%
+        vat_rate: 18
     });
 
     const [showMaterialDropdown, setShowMaterialDropdown] = useState(false);
@@ -162,14 +160,12 @@ export default function AddSaleForm() {
         const sellingPrice = parseFloat(currentItem.selling_price);
         const vatRate = parseFloat(currentItem.vat_rate);
 
-        // Calculate totals
-        const subtotal = quantity * sellingPrice; // Price without VAT
-        const vatAmount = subtotal * (vatRate / 100); // VAT = subtotal * 18/100
-        const totalAmount = subtotal + vatAmount; // Total with VAT
+        const subtotal = quantity * sellingPrice;
+        const vatAmount = subtotal * (vatRate / 100);
+        const totalAmount = subtotal + vatAmount;
         const costTotal = quantity * material.buying_price;
-        const profit = totalAmount - costTotal;
+        const profit = subtotal - costTotal;
 
-        // Check if selling price is less than buying price
         if (sellingPrice < material.buying_price) {
             if (!window.confirm('Warning: Selling price is less than buying price. This will result in a loss. Are you sure you want to continue?')) {
                 return;
@@ -185,13 +181,12 @@ export default function AddSaleForm() {
             quantity: quantity,
             selling_price: sellingPrice,
             vat_rate: vatRate,
-            // Calculated values
             subtotal: subtotal,
             vat_amount: vatAmount,
             total_amount: totalAmount,
             cost_total: costTotal,
             profit: profit,
-            margin: totalAmount > 0 ? (profit / totalAmount * 100) : 0
+            margin: subtotal > 0 ? (profit / subtotal * 100) : 0
         };
 
         setFormData(prev => ({
@@ -199,7 +194,6 @@ export default function AddSaleForm() {
             items: [...prev.items, newItem]
         }));
 
-        // Reset current item
         setCurrentItem({
             material: '',
             quantity: 1,
@@ -229,8 +223,8 @@ export default function AddSaleForm() {
             totalCost += item.cost_total || 0;
         });
 
-        const totalProfit = totalAmount - totalCost;
-        const averageMargin = totalAmount > 0 ? (totalProfit / totalAmount * 100) : 0;
+        const totalProfit = subtotal - totalCost;
+        const averageMargin = subtotal > 0 ? (totalProfit / subtotal * 100) : 0;
 
         return {
             subtotal,
@@ -295,15 +289,15 @@ export default function AddSaleForm() {
     const totals = calculateGrandTotals();
 
     const getProfitColor = (profit) => {
-        if (profit > 0) return 'text-green-600';
+        if (profit > 0) return 'text-green-900';
         if (profit < 0) return 'text-red-600';
         return 'text-gray-600';
     };
 
     const getMarginColor = (margin) => {
-        if (margin >= 20) return 'text-green-600';
-        if (margin >= 10) return 'text-yellow-600';
-        if (margin > 0) return 'text-orange-600';
+        if (margin >= 20) return 'text-green-900';
+        if (margin >= 10) return 'text-green-800';
+        if (margin > 0) return 'text-green-700';
         return 'text-red-600';
     };
 
@@ -311,7 +305,7 @@ export default function AddSaleForm() {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="flex flex-col items-center space-y-4">
-                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-4 border-green-900 border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-gray-600">Loading form data...</p>
                 </div>
             </div>
@@ -323,7 +317,7 @@ export default function AddSaleForm() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                        <ShoppingBag className="w-6 h-6 mr-3 text-blue-600" />
+                        <ShoppingBag className="w-6 h-6 mr-3 text-green-900" />
                         Create New Sale
                     </h1>
                     <p className="text-gray-600 mt-1">
@@ -333,7 +327,7 @@ export default function AddSaleForm() {
 
                 <Link
                     to="/inventory/sales/list"
-                    className="flex items-center px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Sales
@@ -341,7 +335,6 @@ export default function AddSaleForm() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Customer and Session Info */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Sale Information</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -357,7 +350,7 @@ export default function AddSaleForm() {
                                     name="customer"
                                     value={formData.customer}
                                     onChange={handleCustomerChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 appearance-none"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 appearance-none text-gray-900"
                                     required
                                 >
                                     <option value="">Select Customer</option>
@@ -382,7 +375,7 @@ export default function AddSaleForm() {
                                     name="session"
                                     value={formData.session}
                                     onChange={(e) => setFormData(prev => ({ ...prev, session: e.target.value }))}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 appearance-none"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 appearance-none text-gray-900"
                                     required
                                 >
                                     <option value="1">Session 1 (Jan - Apr)</option>
@@ -405,7 +398,7 @@ export default function AddSaleForm() {
                                     name="year"
                                     value={formData.year}
                                     onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 text-gray-900"
                                     required
                                     min="2020"
                                     max="2030"
@@ -415,7 +408,6 @@ export default function AddSaleForm() {
                     </div>
                 </div>
 
-                {/* Add Items Section */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Items</h2>
 
@@ -439,7 +431,7 @@ export default function AddSaleForm() {
                                         }
                                     }}
                                     onFocus={() => setShowMaterialDropdown(true)}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 text-gray-900"
                                     placeholder="Search material..."
                                 />
                                 {showMaterialDropdown && filteredMaterials.length > 0 && (
@@ -473,7 +465,7 @@ export default function AddSaleForm() {
                                 name="quantity"
                                 value={currentItem.quantity}
                                 onChange={handleItemChange}
-                                className="w-full px-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                className="w-full px-3 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 text-gray-900"
                                 min="0.01"
                                 step="0.01"
                             />
@@ -492,7 +484,7 @@ export default function AddSaleForm() {
                                     name="selling_price"
                                     value={currentItem.selling_price}
                                     onChange={handleItemChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 text-gray-900"
                                     min="0.01"
                                     step="0.01"
                                 />
@@ -512,11 +504,11 @@ export default function AddSaleForm() {
                                     name="vat_rate"
                                     value={currentItem.vat_rate}
                                     onChange={handleItemChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 text-gray-900"
                                     min="0"
                                     max="100"
                                     step="0.01"
-                                    readOnly // Make it read-only if you want to force 18%
+                                    readOnly
                                 />
                             </div>
                         </div>
@@ -525,7 +517,7 @@ export default function AddSaleForm() {
                             <button
                                 type="button"
                                 onClick={addItem}
-                                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                className="w-full px-4 py-3 bg-green-900 text-white rounded-lg hover:bg-green-800 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Plus className="w-4 h-4" />
                                 Add Item
@@ -533,11 +525,10 @@ export default function AddSaleForm() {
                         </div>
                     </div>
 
-                    {/* Selected Material Info */}
                     {selectedMaterialDetails && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                            <div className="flex items-center gap-2 text-sm text-blue-700">
-                                <Info className="w-4 h-4" />
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-2 text-sm text-gray-700">
+                                <Info className="w-4 h-4 text-green-900" />
                                 <span>
                                     Buying Price: {formatCurrency(selectedMaterialDetails.buying_price)} |
                                     Suggested Selling: {formatCurrency(selectedMaterialDetails.selling_price)} |
@@ -547,29 +538,28 @@ export default function AddSaleForm() {
                         </div>
                     )}
 
-                    {/* Items Table */}
                     {formData.items.length > 0 && (
                         <div className="mt-6">
                             <h3 className="text-md font-medium text-gray-900 mb-3">Added Items</h3>
-                            <div className="bg-gray-50 rounded-lg overflow-hidden">
+                            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                                 <table className="w-full">
-                                    <thead className="bg-gray-100">
+                                    <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Material</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Qty</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Price (excl VAT)</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">VAT Rate</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">VAT Amount</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Subtotal</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Total (incl VAT)</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Cost</th>
-                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Profit</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">Action</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price (excl VAT)</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">VAT Rate</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">VAT Amount</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total (incl VAT)</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
+                                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Profit</th>
+                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
                                         {formData.items.map((item, index) => (
-                                            <tr key={index}>
+                                            <tr key={index} className="hover:bg-gray-50">
                                                 <td className="px-4 py-2">
                                                     <div className="text-sm font-medium text-gray-900">
                                                         {item.material_name}
@@ -593,7 +583,7 @@ export default function AddSaleForm() {
                                                 <td className="px-4 py-2 text-right">
                                                     {formatCurrency(item.subtotal)}
                                                 </td>
-                                                <td className="px-4 py-2 text-right font-medium">
+                                                <td className="px-4 py-2 text-right font-medium text-green-900">
                                                     {formatCurrency(item.total_amount)}
                                                 </td>
                                                 <td className="px-4 py-2 text-right">
@@ -609,7 +599,7 @@ export default function AddSaleForm() {
                                                     <button
                                                         type="button"
                                                         onClick={() => removeItem(index)}
-                                                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                                        className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -617,19 +607,19 @@ export default function AddSaleForm() {
                                             </tr>
                                         ))}
                                     </tbody>
-                                    <tfoot className="bg-gray-100">
+                                    <tfoot className="bg-gray-50 border-t border-gray-200">
                                         <tr>
-                                            <td colSpan="4" className="px-4 py-2 text-right font-medium">Totals:</td>
-                                            <td className="px-4 py-2 text-right font-medium">
+                                            <td colSpan="4" className="px-4 py-2 text-right font-medium text-gray-900">Totals:</td>
+                                            <td className="px-4 py-2 text-right font-medium text-gray-900">
                                                 {formatCurrency(totals.totalVat)}
                                             </td>
-                                            <td className="px-4 py-2 text-right font-medium">
+                                            <td className="px-4 py-2 text-right font-medium text-gray-900">
                                                 {formatCurrency(totals.subtotal)}
                                             </td>
-                                            <td className="px-4 py-2 text-right font-bold text-green-600">
+                                            <td className="px-4 py-2 text-right font-bold text-green-900">
                                                 {formatCurrency(totals.totalAmount)}
                                             </td>
-                                            <td className="px-4 py-2 text-right font-medium">
+                                            <td className="px-4 py-2 text-right font-medium text-gray-900">
                                                 {formatCurrency(totals.totalCost)}
                                             </td>
                                             <td className={`px-4 py-2 text-right font-bold ${getProfitColor(totals.totalProfit)}`}>
@@ -655,7 +645,6 @@ export default function AddSaleForm() {
                     )}
                 </div>
 
-                {/* Notes */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         Notes (Optional)
@@ -665,30 +654,29 @@ export default function AddSaleForm() {
                         value={formData.notes}
                         onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                         rows={3}
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-900/20 focus:border-green-900 transition-all duration-200 text-gray-900"
                         placeholder="Add any additional notes about this sale..."
                     />
                 </div>
 
-                {/* Profit Summary Card */}
                 {formData.items.length > 0 && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4">
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
                                 <p className="text-sm text-gray-600">Subtotal (excl VAT)</p>
-                                <p className="text-xl font-bold text-gray-700">{formatCurrency(totals.subtotal)}</p>
+                                <p className="text-xl font-bold text-gray-900">{formatCurrency(totals.subtotal)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">VAT Total (18%)</p>
-                                <p className="text-xl font-bold text-blue-600">{formatCurrency(totals.totalVat)}</p>
+                                <p className="text-xl font-bold text-gray-900">{formatCurrency(totals.totalVat)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Total (incl VAT)</p>
-                                <p className="text-xl font-bold text-green-600">{formatCurrency(totals.totalAmount)}</p>
+                                <p className="text-xl font-bold text-green-900">{formatCurrency(totals.totalAmount)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Total Cost</p>
-                                <p className="text-xl font-bold text-gray-700">{formatCurrency(totals.totalCost)}</p>
+                                <p className="text-xl font-bold text-gray-900">{formatCurrency(totals.totalCost)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Total Profit</p>
@@ -705,7 +693,6 @@ export default function AddSaleForm() {
                     </div>
                 )}
 
-                {/* Form Actions */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <div className="flex items-center justify-end gap-4">
                         <Link
@@ -717,7 +704,7 @@ export default function AddSaleForm() {
                         <button
                             type="submit"
                             disabled={loading || formData.items.length === 0}
-                            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-6 py-3 bg-green-900 text-white font-medium rounded-lg hover:bg-green-800 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {loading ? (
                                 <>

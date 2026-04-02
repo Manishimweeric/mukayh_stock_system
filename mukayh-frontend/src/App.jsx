@@ -24,6 +24,15 @@ import CustomersList from './components/Customers/CustomersList.jsx';
 import AddCustomerForm from './components/Customers/AddCustomerForm.jsx';
 import SalesList from './components/Sales/SalesList.jsx';
 import AddSaleForm from './components/Sales/AddSaleForm.jsx';
+import SalesSummary from './components/Sales/SalesSummary.jsx';
+import SalesAnalytics from './components/Sales/SalesAnalytics.jsx';
+import ComprehensiveAnalytics from './components/Sales/ComprehensiveAnalytics.jsx';
+import SupplierOrdersList from './components/Supplier/SupplierOrdersList.jsx';
+import SupplierOrderForm from './components/Supplier/SupplierOrderForm.jsx';
+import SupplierOrderReceive from './components/Supplier/SupplierOrderReceive.jsx';
+import SupplierOrders from './components/Supplier/SupplierOrders.jsx';
+import ProductAnalytics from './components/Material/ProductAnalytics.jsx';
+import MaterialsAnalytics from './components/Material/MaterialsAnalytics.jsx';
 
 
 function App() {
@@ -54,6 +63,15 @@ function App() {
             <Route path="customers/add-new" element={<AddCustomerForm />} />
             <Route path="sales/list" element={<SalesList />} />
             <Route path="sales/add-new" element={<AddSaleForm />} />
+            <Route path="sales/summary" element={<SalesSummary />} />
+            <Route path="sales/analytics" element={<SalesAnalytics />} />
+            <Route path="sales/comprehensive" element={<ComprehensiveAnalytics />} />
+            <Route path="supplier-orders/add-new" element={<SupplierOrderForm />} />
+            <Route path="supplier-orders/list" element={<SupplierOrdersList />} />
+            <Route path="supplier-orders/receive/:id" element={<SupplierOrderReceive />} />
+            <Route path="supplier-orders/supplier" element={<SupplierOrders />} />
+            <Route path="analytics/products" element={<ProductAnalytics />} />
+            <Route path="analytics/materials" element={<MaterialsAnalytics />} />
 
           </Route>
         </Routes>

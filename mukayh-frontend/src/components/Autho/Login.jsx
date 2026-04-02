@@ -53,15 +53,37 @@ const LoginPage = () => {
         setLoading(true);
         try {
             const result = await authService.login(formData.email, formData.password);
+            const userRole = result.data.user?.role?.toUpperCase();
+            console.log('Login result:', result);
 
             if (result.success) {
-                navigate("/inventory")
-                toast.success('Welcome back! Login successful.');
+                switch (userRole) {
+                    case 'ADMIN':
+                        navigate("/inventory/dashboard/admin");
+                        toast.success('Welcome Admin! Login successful.');
+                        break;
+                    case 'MANAGER':
+                        navigate("/inventory/dashboard/manager");
+                        toast.success('Welcome Manager! Login successful.');
+                        break;
+                    case 'STOREKEEP':
+                        navigate("/inventory/dashboard/storekeep");
+                        toast.success('Welcome back! Login successful.');
+                        break;
+                    case 'SUPPLIER':
+                        navigate("/inventory/supplier-orders/supplier");
+                        toast.success('Welcome Supplier! Login successful.');
+                        break;
+                    default:
+                        navigate("/inventory/");
+                        toast.success('Login successful!');
+                        break;
+                }
             } else {
-                toast.error('Login failed. Check your credentials. 🤯')
+                toast.error('Login failed. Check your credentials. 🤯');
             }
         } catch (error) {
-            console.log(error)
+            console.log(error);
             toast.error('Connection failed. Please check your network.');
         } finally {
             setLoading(false);
