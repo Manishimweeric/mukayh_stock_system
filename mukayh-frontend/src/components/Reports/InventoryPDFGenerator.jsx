@@ -79,6 +79,10 @@ class InventoryPDFGenerator {
             }).format(Math.round(amount || 0));
         };
 
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat().format(Math.round(num || 0));
+        };
+
         const currentDate = new Date().toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -96,9 +100,9 @@ class InventoryPDFGenerator {
             const maximumStock = parseFloat(material.maximum_stock) || 0;
 
             if (currentStock <= reorderLevel) {
-                return { status: 'LOW', color: '#fee', textColor: '#c00' };
+                return { status: 'LOW STOCK', color: '#fee', textColor: '#c00' };
             } else if (currentStock >= maximumStock) {
-                return { status: 'OVERSTOCK', color: '#ffeb3b', textColor: '#ff6f00' };
+                return { status: 'OVERSTOCK', color: '#fff3e0', textColor: '#ff6f00' };
             } else {
                 return { status: 'NORMAL', color: '#e8f5e9', textColor: '#2e7d32' };
             }
@@ -111,7 +115,44 @@ class InventoryPDFGenerator {
         };
 
         try {
-            const recordsPerPage = 25;
+            // Load logo image as base64
+            const loadLogo = async () => {
+                try {
+                    const logoPaths = [
+                        '/images/Mukayh.png',
+                        '/images/logo.png',
+                        '/images/logo.jpg',
+                        '/images/logo.jpeg',
+                        '/logo.png',
+                        '/logo.jpg'
+                    ];
+
+                    for (const path of logoPaths) {
+                        try {
+                            const response = await fetch(path);
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                return await new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result);
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(blob);
+                                });
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    return null;
+                } catch (error) {
+                    console.warn('Could not load logo:', error);
+                    return null;
+                }
+            };
+
+            const logoBase64 = await loadLogo();
+
+            const recordsPerPage = 20;
             const totalPages = Math.ceil(filteredMaterials.length / recordsPerPage);
 
             const pdf = new jsPDF({
@@ -144,14 +185,28 @@ class InventoryPDFGenerator {
                 container.style.opacity = '0';
                 container.style.pointerEvents = 'none';
 
+                const logoHTML = logoBase64 ? `
+                    <div style="display: flex; align-items: center; gap: 1px;">
+                        <img src="${logoBase64}" alt="Company Logo" style="height: 100px; width: auto; object-fit: contain; margin-top: 20px" />
+                        <div>
+                            <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
+                            <p style="margin: 0; font-size: 11px; color: #666;">Materials Inventory Management Report</p>
+                        </div>
+                    </div>
+                ` : `
+                    <div> 
+                        <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
+                        <p style="margin: 0; font-size: 11px; color: #666;">Materials Inventory Management Report</p>
+                    </div>
+                `;
+
                 container.innerHTML = `
                 <div style="width: 100%; visibility: visible; opacity: 1;">
                     <!-- Header Section -->
-                    <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #000;">
+                    <div style="margin-bottom: 20px; padding-bottom: 15px">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div> 
-                                <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
-                                <p style="margin: 0; font-size: 11px; color: #666;">Materials Inventory Management Report</p>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                ${logoHTML}
                                 <div style="font-weight: bold;color: #333;font-size: 12px;text-transform: uppercase;margin-top: 8px;padding: 6px 10px;background: #f5f5f5;border-left: 3px solid #000;display: inline-block;">
                                     INVENTORY STATUS REPORT
                                 </div>
@@ -169,52 +224,21 @@ class InventoryPDFGenerator {
                         ` : ''}
                     </div>
 
-                    <!-- Summary Section (First Page Only) -->
-                    ${pageNum === 0 ? `
-                    <div style="margin-bottom: 15px; padding: 12px; background: #f8f8f8; border-radius: 5px;">
-                        <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold;">REPORT SUMMARY</h3>
-                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
-                            <div style="text-align: center; padding: 8px; background: white; border-radius: 4px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">Total Materials</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333;">${summary.total}</div>
-                            </div>
-                            <div style="text-align: center; padding: 8px; background: white; border-radius: 4px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">Active Materials</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #2e7d32;">${summary.active}</div>
-                            </div>
-                            <div style="text-align: center; padding: 8px; background: white; border-radius: 4px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">Low Stock</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #c00;">${summary.lowStock}</div>
-                            </div>
-                            <div style="text-align: center; padding: 8px; background: white; border-radius: 4px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">Overstock</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #ff6f00;">${summary.overstock}</div>
-                            </div>
-                            <div style="text-align: center; padding: 8px; background: white; border-radius: 4px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">Total Value</div>
-                                <div style="font-size: 14px; font-weight: bold; color: #333;">${formatCurrency(summary.totalValue)}</div>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <!-- Materials Table -->
-                    <h3 style="margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid #ddd; font-size: 15px; font-weight: bold;">
-                        MATERIALS INVENTORY RECORDS
-                    </h3>
-                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 10px;">
+                   
+                  
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 10px; font-size: 9px;">
                         <thead>
                             <tr style="background: #2c3e50; color: white;">
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 4%;">#</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: left; font-size: 10px; font-weight: bold; width: 18%;">MATERIAL NAME</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: left; font-size: 10px; font-weight: bold; width: 12%;">CATEGORY</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 8%;">CURRENT STOCK</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 6%;">UNIT</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 10%;">UNIT PRICE</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 12%;">STOCK VALUE</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 10%;">STOCK STATUS</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 10%;">ACTIVE STATUS</th>
-                                <th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold; width: 10%;">LAST UPDATED</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 4%;">#</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: left; width: 18%;">MATERIAL NAME</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: left; width: 12%;">CATEGORY</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 8%;">CURRENT STOCK</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 6%;">UNIT</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 10%;">UNIT PRICE</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 12%;">STOCK VALUE</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 10%;">STOCK STATUS</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 10%;">ACTIVE STATUS</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 10%;">LAST UPDATED</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,29 +250,49 @@ class InventoryPDFGenerator {
 
                     return `
                                 <tr style="${index % 2 === 0 ? 'background: #f9f9f9;' : 'background: white;'}">
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold;">${startIndex + index + 1}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; font-size: 10px;">${material.name || 'Unnamed Material'}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; font-size: 10px;">${categoryName}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold;">${material.current_stock || 0}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${material.unit || ''}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${formatCurrency(material.unit_price || 0)}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; font-weight: bold;">${formatCurrency(stockValue)}</td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">
-                                        <div style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 9px; font-weight: bold; background: ${stockStatus.color}; color: ${stockStatus.textColor};">
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold;">${startIndex + index + 1}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; font-size: 9px;">${material.name || 'Unnamed Material'}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; font-size: 9px;">${categoryName}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold;">${formatNumber(material.current_stock || 0)}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">${material.unit || ''}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">${formatCurrency(material.unit_price || 0)}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold;">${formatCurrency(stockValue)}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">
+                                        <div style="display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 8px; font-weight: bold; background: ${stockStatus.color}; color: ${stockStatus.textColor};">
                                             ${stockStatus.status}
                                         </div>
                                     </td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">
-                                        <div style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 9px; font-weight: bold; background: ${activeStatus.color}; color: ${activeStatus.textColor};">
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">
+                                        <div style="display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 8px; font-weight: bold; background: ${activeStatus.color}; color: ${activeStatus.textColor};">
                                             ${activeStatus.text}
                                         </div>
                                     </td>
-                                    <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px;">${formatDateForReport(material.updated_at)}</td>
+                                    <td style="border: 1px solid #000; padding: 5px; text-align: center; font-size: 8px;">${formatDateForReport(material.updated_at)}</td>
                                 </tr>
                                 `;
                 }).join('')}
                         </tbody>
+                        <tfoot style="background: #f0f0f0;">
+                            <tr>
+                                <td colspan="4" style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold;">PAGE TOTALS:</td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">
+                                    ${formatNumber(pageMaterials.reduce((sum, m) => sum + (parseFloat(m.current_stock) || 0), 0))}
+                                </td>
+                                <td style="border: 1px solid #000; padding: 6px;"></td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">
+                                    ${formatCurrency(pageMaterials.reduce((sum, m) => sum + ((parseFloat(m.current_stock) || 0) * (parseFloat(m.unit_price) || 0)), 0))}
+                                </td>
+                                <td colspan="3" style="border: 1px solid #000; padding: 6px;"></td>
+                            </tr>
+                        </tfoot>
                     </table>
+
+                    ${pageNum === 0 ? `
+                    <div style="margin-top: 10px; padding: 8px; background: #f8f8f8; border-radius: 4px; font-size: 9px; color: #666;">
+                        <strong>Notes:</strong> Low Stock indicates materials at or below reorder level. Overstock indicates materials at or above maximum stock level. 
+                        Inactive materials are not available for use.
+                    </div>
+                    ` : ''}
 
                     <!-- Footer Section -->
                     <div style="margin-top: ${pageNum === totalPages - 1 ? '30px' : '10px'}; padding-top: ${pageNum === totalPages - 1 ? '15px' : '5px'}; border-top: 1px solid #ddd;">
@@ -268,7 +312,7 @@ class InventoryPDFGenerator {
                             </div>
                         </div>
                         ` : ''}
-                        <div style="text-align: center; font-size: 9px; color: #666; margin-top: ${pageNum === totalPages - 1 ? '15px' : '5px'}; padding-top: 5px; border-top: ${pageNum === totalPages - 1 ? '1px solid #ddd' : 'none'};">
+                        <div style="text-align: center; font-size: 8px; color: #666; margin-top: ${pageNum === totalPages - 1 ? '15px' : '5px'}; padding-top: 5px; border-top: ${pageNum === totalPages - 1 ? '1px solid #ddd' : 'none'};">
                             DOCUMENT ID: INV-${Date.now().toString().slice(-6)} | PAGE ${pageNum + 1} OF ${totalPages} | CONFIDENTIAL
                         </div>
                     </div>

@@ -453,7 +453,7 @@ const StockMovementsList = () => {
                                 : 'No stock movements recorded yet.'}
                         </p>
                         <Link
-                            to="/inventory/movements/create"
+                            to="/inventory/stock/movement"
                             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <ArrowUp className="w-4 h-4 mr-2" />

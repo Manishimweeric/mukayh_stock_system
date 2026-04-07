@@ -84,8 +84,7 @@ export default function AddUserForm() {
     };
     const roleOptions = [
         { value: 'ADMIN', label: 'Administrator', icon: Shield },
-        { value: 'MANAGER', label: 'Manager', icon: Briefcase },
-        { value: 'WAREHOUSE', label: 'Warehouse Staff', icon: Users }
+        { value: 'MANAGER', label: 'Manager', icon: Briefcase }
     ];
 
     return (

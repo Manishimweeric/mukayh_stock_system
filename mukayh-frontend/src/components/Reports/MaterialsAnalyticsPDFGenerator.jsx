@@ -148,6 +148,43 @@ class MaterialsAnalyticsPDFGenerator {
                 fileName += `-${shortFilter}`;
             }
 
+            // Load logo image as base64
+            const loadLogo = async () => {
+                try {
+                    // Try multiple possible paths for the logo
+                    const logoPaths = [
+                        '/images/Mukayh.png',
+                        '/images/logo.jpg',
+                        '/images/logo.jpeg',
+                        '/logo.png',
+                        '/logo.jpg'
+                    ];
+
+                    for (const path of logoPaths) {
+                        try {
+                            const response = await fetch(path);
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                return await new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result);
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(blob);
+                                });
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    return null;
+                } catch (error) {
+                    console.warn('Could not load logo:', error);
+                    return null;
+                }
+            };
+
+            const logoBase64 = await loadLogo();
+
             for (let pageNum = 0; pageNum < totalPages; pageNum++) {
                 const startIndex = pageNum * recordsPerPage;
                 const endIndex = Math.min(startIndex + recordsPerPage, filteredMaterials.length);
@@ -166,14 +203,28 @@ class MaterialsAnalyticsPDFGenerator {
                 container.style.opacity = '0';
                 container.style.pointerEvents = 'none';
 
+                const logoHTML = logoBase64 ? `
+                    <div style="display: flex; align-items: center; gap: 1px;">
+                        <img src="${logoBase64}" alt="Company Logo" style="height: 100px; width: auto; object-fit: contain; margin-top: 20px" />
+                        <div>
+                            <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
+                            <p style="margin: 0; font-size: 11px; color: #666;">Materials Analytics & Inventory Report</p>
+                        </div>
+                    </div>
+                ` : `
+                    <div> 
+                        <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
+                        <p style="margin: 0; font-size: 11px; color: #666;">Materials Analytics & Inventory Report</p>
+                    </div>
+                `;
+
                 container.innerHTML = `
                 <div style="width: 100%; visibility: visible; opacity: 1;">
                     <!-- Header Section -->
-                    <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #000;">
+                    <div style="margin-bottom: 20px; padding-bottom: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div> 
-                                <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
-                                <p style="margin: 0; font-size: 11px; color: #666;">Materials Analytics & Inventory Report</p>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                ${logoHTML}
                                 <div style="font-weight: bold;color: #333;font-size: 12px;text-transform: uppercase;margin-top: 8px;padding: 6px 10px;background: #f5f5f5;border-left: 3px solid #000;display: inline-block;">
                                     MATERIALS ANALYTICS REPORT
                                 </div>
@@ -194,30 +245,9 @@ class MaterialsAnalyticsPDFGenerator {
                     <!-- Summary Section (First Page Only) -->
                     ${pageNum === 0 ? `                    
 
-                    <!-- Expiry Alerts Section -->
-                    ${(expiryAlerts.expired_materials?.length > 0 || expiryAlerts.soon_to_expire_materials?.length > 0) ? `
-                    <div style="margin-bottom: 15px; padding: 10px; background: #fff3e0; border-radius: 5px;">
-                        <h3 style="margin: 0 0 8px 0; font-size: 13px; font-weight: bold; color: #ff6f00;">EXPIRY ALERTS</h3>
-                        ${expiryAlerts.expired_materials?.length > 0 ? `
-                        <div style="margin-bottom: 8px;">
-                            <span style="display: inline-block; padding: 3px 8px; background: #fee; color: #c00; border-radius: 4px; font-size: 10px; font-weight: bold;">EXPIRED</span>
-                            <span style="font-size: 11px; margin-left: 8px;">${expiryAlerts.expired_materials.length} material(s) have expired</span>
-                        </div>
-                        ` : ''}
-                        ${expiryAlerts.soon_to_expire_materials?.length > 0 ? `
-                        <div>
-                            <span style="display: inline-block; padding: 3px 8px; background: #fff3e0; color: #ff6f00; border-radius: 4px; font-size: 10px; font-weight: bold;">EXPIRING SOON</span>
-                            <span style="font-size: 11px; margin-left: 8px;">${expiryAlerts.soon_to_expire_materials.length} material(s) will expire within 30 days</span>
-                        </div>
-                        ` : ''}
-                    </div>
+                   
                     ` : ''}
-                    ` : ''}
-
-                    <!-- Materials Table -->
-                    <h3 style="margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid #ddd; font-size: 15px; font-weight: bold;">
-                        MATERIALS INVENTORY RECORDS
-                    </h3>
+                 
                     <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 10px; font-size: 9px;">
                         <thead>
                             <tr style="background: #2c3e50; color: white;">

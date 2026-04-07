@@ -243,7 +243,7 @@ export default function StockMovementPage() {
                 </div>
 
                 <Link
-                    to="/inventory/items/list"
+                    to="/inventory/stock/movement/list"
                     className="flex items-center px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

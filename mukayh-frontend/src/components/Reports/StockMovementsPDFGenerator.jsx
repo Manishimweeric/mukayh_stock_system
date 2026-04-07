@@ -76,6 +76,10 @@ class StockMovementsPDFGenerator {
             }).format(Math.round(amount || 0));
         };
 
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat().format(Math.round(num || 0));
+        };
+
         const currentDate = new Date().toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -102,11 +106,47 @@ class StockMovementsPDFGenerator {
         };
 
         try {
-            // Calculate records per page
-            const recordsFirstPage = 12; // First page with summary
-            const recordsOtherPages = 20; // Other pages without summary
+            // Load logo image as base64
+            const loadLogo = async () => {
+                try {
+                    const logoPaths = [
+                        '/images/Mukayh.png',
+                        '/images/logo.png',
+                        '/images/logo.jpg',
+                        '/images/logo.jpeg',
+                        '/logo.png',
+                        '/logo.jpg'
+                    ];
 
-            // Calculate total pages
+                    for (const path of logoPaths) {
+                        try {
+                            const response = await fetch(path);
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                return await new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result);
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(blob);
+                                });
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    return null;
+                } catch (error) {
+                    console.warn('Could not load logo:', error);
+                    return null;
+                }
+            };
+
+            const logoBase64 = await loadLogo();
+
+            // Calculate records per page
+            const recordsFirstPage = 12;
+            const recordsOtherPages = 20;
+
             let totalPages = 1;
             if (filteredMovements.length > recordsFirstPage) {
                 const remaining = filteredMovements.length - recordsFirstPage;
@@ -128,44 +168,56 @@ class StockMovementsPDFGenerator {
             let recordIndex = 0;
 
             for (let pageNum = 0; pageNum < totalPages; pageNum++) {
-                // Calculate records for this page
                 const recordsThisPage = (pageNum === 0) ? recordsFirstPage : recordsOtherPages;
                 const startIndex = recordIndex;
                 const endIndex = Math.min(recordIndex + recordsThisPage, filteredMovements.length);
                 const pageMovements = filteredMovements.slice(startIndex, endIndex);
 
-                recordIndex = endIndex; // Move to next batch
+                recordIndex = endIndex;
 
                 const container = document.createElement('div');
-                container.style.cssText = `
-                    position: fixed;
-                    top: -10000px;
-                    left: -10000px;
-                    width: 297mm;
-                    min-height: 210mm;
-                    padding: 20px;
-                    background-color: white;
-                    box-sizing: border-box;
-                    font-family: Arial, sans-serif;
+                container.style.position = 'fixed';
+                container.style.top = '-10000px';
+                container.style.left = '-10000px';
+                container.style.width = '297mm';
+                container.style.padding = '20px';
+                container.style.backgroundColor = 'white';
+                container.style.boxSizing = 'border-box';
+                container.style.fontFamily = 'Arial, sans-serif';
+                container.style.visibility = 'hidden';
+                container.style.opacity = '0';
+                container.style.pointerEvents = 'none';
+
+                const logoHTML = logoBase64 ? `
+                    <div style="display: flex; align-items: center; gap: 1px;">
+                        <img src="${logoBase64}" alt="Company Logo" style="height: 100px; width: auto; object-fit: contain; margin-top: 20px" />
+                        <div>
+                            <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
+                            <p style="margin: 0; font-size: 11px; color: #666;">Stock Movements Transaction Report</p>
+                        </div>
+                    </div>
+                ` : `
+                    <div> 
+                        <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">MUKAYH INVENTORY SYSTEM</h1>
+                        <p style="margin: 0; font-size: 11px; color: #666;">Stock Movements Transaction Report</p>
+                    </div>
                 `;
 
                 container.innerHTML = `
-                <div style="width: 100%; min-height: 210mm; display: flex; flex-direction: column;">
-                    <div style="flex: 1;">
+                <div style="width: 100%; visibility: visible; opacity: 1;">
                     <!-- Header Section -->
-                    <div style="margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #000;">
+                    <div style="margin-bottom: 20px; padding-bottom: 15px; ">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div> 
-                                <h1 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">CONSTRUCTION INVENTORY SYSTEM</h1>
-                                <p style="margin: 0; font-size: 11px; color: #666;">Stock Movements Transaction Report</p>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                ${logoHTML}
                                 <div style="font-weight: bold;color: #333;font-size: 12px;text-transform: uppercase;margin-top: 8px;padding: 6px 10px;background: #f5f5f5;border-left: 3px solid #000;display: inline-block;">
                                     STOCK MOVEMENTS REPORT
                                 </div>
                             </div>
                             <div style="text-align: right;">
                                 <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: bold; text-transform: uppercase;">STOCK MOVEMENTS LOG</h2>
-                                <p style="margin: 0 0 5px 0; font-size: 10px; color: #666;">Generated: ${currentDate}</p>
-                                <p style="margin: 0; font-size: 11px; font-weight: bold; color: #333;">Page ${pageNum + 1} of ${totalPages}</p>
+                                <p style="margin: 0 0 5px 0; font-size: 10px; color: #666;">Generated on: ${currentDate}</p>
+                                <p style="margin: 0; font-size: 10px; color: #666;">Page ${pageNum + 1} of ${totalPages}</p>
                             </div>
                         </div>
                         ${filterDescription && pageNum === 0 ? `
@@ -175,53 +227,19 @@ class StockMovementsPDFGenerator {
                         ` : ''}
                     </div>
 
-                    <!-- Summary Section (First Page Only) -->
-                    ${pageNum === 0 ? `
-                    <div style="margin-bottom: 12px; padding: 10px; background: #f8f8f8; border-radius: 5px;">
-                        <h3 style="margin: 0 0 8px 0; font-size: 13px; font-weight: bold;">TRANSACTION SUMMARY</h3>
-                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
-                            <div style="text-align: center; padding: 6px; background: white; border-radius: 4px;">
-                                <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Total Movements</div>
-                                <div style="font-size: 15px; font-weight: bold; color: #333;">${summary.total}</div>
-                            </div>
-                            <div style="text-align: center; padding: 6px; background: white; border-radius: 4px;">
-                                <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Total Stock In</div>
-                                <div style="font-size: 15px; font-weight: bold; color: #2e7d32;">${summary.totalIn}</div>
-                            </div>
-                            <div style="text-align: center; padding: 6px; background: white; border-radius: 4px;">
-                                <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Total Stock Out</div>
-                                <div style="font-size: 15px; font-weight: bold; color: #c00;">${summary.totalOut}</div>
-                            </div>
-                            <div style="text-align: center; padding: 6px; background: white; border-radius: 4px;">
-                                <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Net Change</div>
-                                <div style="font-size: 15px; font-weight: bold; color: ${parseFloat(summary.netChange) >= 0 ? '#2e7d32' : '#c00'}">
-                                    ${summary.netChange}
-                                </div>
-                            </div>
-                            <div style="text-align: center; padding: 6px; background: white; border-radius: 4px;">
-                                <div style="font-size: 10px; color: #666; margin-bottom: 2px;">Total Value</div>
-                                <div style="font-size: 13px; font-weight: bold; color: #333;">${formatCurrency(summary.totalValue)}</div>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <!-- Movements Table -->
-                    <h3 style="margin: 0 0 8px 0; padding-bottom: 5px; border-bottom: 1px solid #ddd; font-size: 14px; font-weight: bold;">
-                        STOCK MOVEMENTS TRANSACTIONS ${pageNum > 0 ? '(Continued)' : ''}
-                    </h3>
-                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 9px;">
+                  
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 10px; font-size: 9px;">
                         <thead>
                             <tr style="background: #2c3e50; color: white;">
-                                <th style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; width: 3%;">#</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: left; font-weight: bold; width: 15%;">MATERIAL</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; width: 8%;">TYPE</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; width: 9%;">QUANTITY</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; width: 11%;">UNIT PRICE</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; width: 11%;">TOTAL VALUE</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; width: 10%;">BEFORE/AFTER</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: left; font-weight: bold; width: 16%;">REFERENCE</th>
-                                <th style="border: 1px solid #000; padding: 5px; text-align: left; font-weight: bold; width: 17%;">CREATED BY</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 4%;">#</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: left; width: 18%;">MATERIAL</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 8%;">TYPE</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 8%;">QUANTITY</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 10%;">UNIT PRICE</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 12%;">TOTAL VALUE</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: center; width: 10%;">BEFORE/AFTER</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: left; width: 14%;">REFERENCE</th>
+                                <th style="border: 1px solid #000; padding: 6px; text-align: left; width: 16%;">CREATED BY</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -232,7 +250,7 @@ class StockMovementsPDFGenerator {
                     const unitPrice = formatCurrency(movement.unit_price || 0);
                     const totalValue = formatCurrency(movement.total_value || 0);
                     const quantity = parseFloat(movement.quantity) || 0;
-                    const quantityDisplay = movement.movement_type === 'IN' ? `+${quantity}` : `-${quantity}`;
+                    const quantityDisplay = movement.movement_type === 'IN' ? `+${formatNumber(quantity)}` : `-${formatNumber(quantity)}`;
                     const stockBefore = parseFloat(movement.previous_stock) || 0;
                     const stockAfter = parseFloat(movement.new_stock) || 0;
                     const createdByName = movement.created_by_name || 'Unknown User';
@@ -260,7 +278,7 @@ class StockMovementsPDFGenerator {
                                         ${totalValue}
                                     </td>
                                     <td style="border: 1px solid #000; padding: 5px; text-align: center;">
-                                        ${stockBefore} → <strong>${stockAfter}</strong>
+                                        ${formatNumber(stockBefore)} → <strong>${formatNumber(stockAfter)}</strong>
                                     </td>
                                     <td style="border: 1px solid #000; padding: 5px; font-size: 8px;">
                                         ${reference}
@@ -273,19 +291,31 @@ class StockMovementsPDFGenerator {
                                 `;
                 }).join('')}
                         </tbody>
+                        <tfoot style="background: #f0f0f0;">
+                            <tr>
+                                <td colspan="3" style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold;">PAGE TOTALS:</td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">
+                                    ${formatNumber(pageMovements.reduce((sum, m) => sum + (parseFloat(m.quantity) || 0), 0))}
+                                </td>
+                                <td style="border: 1px solid #000; padding: 6px;"></td>
+                                <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">
+                                    ${formatCurrency(pageMovements.reduce((sum, m) => sum + (parseFloat(m.total_value) || 0), 0))}
+                                </td>
+                                <td colspan="3" style="border: 1px solid #000; padding: 6px;"></td>
+                            </tr>
+                        </tfoot>
                     </table>
 
                     ${pageNum === 0 ? `
                     <div style="margin-top: 10px; padding: 8px; background: #f8f8f8; border-radius: 4px; font-size: 9px; color: #666;">
-                        <strong>Notes:</strong> This report shows all stock movement transactions. Positive values indicate stock additions, negative values indicate stock deductions.
+                        <strong>Notes:</strong> This report shows all stock movement transactions. Positive values indicate stock additions, negative values indicate stock deductions. Net Change: ${summary.netChange > 0 ? '+' : ''}${formatNumber(summary.netChange)} units.
                     </div>
                     ` : ''}
-                    </div>
 
-                    <!-- Footer Section - Always at bottom -->
-                    <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <!-- Footer Section -->
+                    <div style="margin-top: ${pageNum === totalPages - 1 ? '30px' : '10px'}; padding-top: ${pageNum === totalPages - 1 ? '15px' : '5px'}; border-top: 1px solid #ddd;">
                         ${pageNum === totalPages - 1 ? `
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-bottom: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-top: 20px;">
                             <div style="text-align: center;">
                                 <div style="border-bottom: 1px solid #000; margin: 20px 0 8px 0; height: 1px;"></div>
                                 <div style="font-weight: bold; font-size: 11px;">PREPARED BY</div>
@@ -300,8 +330,8 @@ class StockMovementsPDFGenerator {
                             </div>
                         </div>
                         ` : ''}
-                        <div style="text-align: center; font-size: 9px; color: #666; padding: 8px 0; ${pageNum === totalPages - 1 ? 'border-top: 1px solid #ddd; margin-top: 10px;' : ''}">
-                            DOCUMENT ID: STK-${Date.now().toString().slice(-6)} | PAGE ${pageNum + 1} OF ${totalPages} | RECORDS ${startIndex + 1}-${endIndex} OF ${filteredMovements.length} | AUDIT TRAIL
+                        <div style="text-align: center; font-size: 8px; color: #666; margin-top: ${pageNum === totalPages - 1 ? '15px' : '5px'}; padding-top: 5px; border-top: ${pageNum === totalPages - 1 ? '1px solid #ddd' : 'none'};">
+                            DOCUMENT ID: STK-${Date.now().toString().slice(-6)} | PAGE ${pageNum + 1} OF ${totalPages} | RECORDS ${startIndex + 1}-${endIndex} OF ${filteredMovements.length} | CONFIDENTIAL
                         </div>
                     </div>
                 </div>
@@ -313,7 +343,11 @@ class StockMovementsPDFGenerator {
                     scale: 2,
                     useCORS: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    onclone: (clonedDoc, element) => {
+                        element.style.visibility = 'visible';
+                        element.style.opacity = '1';
+                    }
                 });
 
                 const imgData = canvas.toDataURL('image/png');
@@ -331,7 +365,7 @@ class StockMovementsPDFGenerator {
 
             pdf.save(`${fileName}.pdf`);
 
-            toast.success(`Report downloaded! ${filteredMovements.length} records in ${totalPages} page${totalPages > 1 ? 's' : ''}`);
+            toast.success(`Stock movements report downloaded successfully! (${filteredMovements.length} records in ${totalPages} page${totalPages > 1 ? 's' : ''})`);
 
         } catch (error) {
             console.error('Error generating PDF report:', error);
