@@ -52,8 +52,6 @@ const menuConfig = [
             },
         ]
     },
-
-
     {
         name: "Customers",
         icon: <Truck className="w-5 h-5" />,
@@ -61,43 +59,6 @@ const menuConfig = [
         roles: ["ADMIN", "MANAGER"],
         hasSubItems: false,
     },
-
-
-    {
-        name: "Sales",
-        icon: <TrendingUp className="w-5 h-5" />,
-        path: "/inventory/sales",
-        roles: ["ADMIN", "MANAGER", "STAFF"],
-        hasSubItems: true,
-        subItems: [
-            {
-                name: "Comprehensive Analytics",
-                icon: <PieChart className="w-4 h-4" />,
-                path: "/inventory/sales/comprehensive",
-                roles: ["ADMIN", "MANAGER"],
-            },
-            {
-                name: "Analytics",
-                icon: <LineChart className="w-4 h-4" />,
-                path: "/inventory/sales/analytics",
-                roles: ["ADMIN", "MANAGER"],
-            },
-            {
-                name: "Summary",
-                icon: <BarChart3 className="w-4 h-4" />,
-                path: "/inventory/sales/summary",
-                roles: ["ADMIN", "MANAGER"],
-            },
-            {
-                name: "Sales List",
-                icon: <Activity className="w-4 h-4" />,
-                path: "/inventory/sales/list",
-                roles: ["ADMIN", "MANAGER", "STAFF"],
-            },
-
-        ],
-    },
-
     {
         name: "Inventory",
         icon: <Package className="w-5 h-5" />,
@@ -166,8 +127,43 @@ const menuConfig = [
 
         ],
     },
+
     {
-        name: "Alerts",
+        name: "Sales Transactions",
+        icon: <TrendingUp className="w-5 h-5" />,
+        path: "/inventory/sales",
+        roles: ["ADMIN", "MANAGER", "STAFF"],
+        hasSubItems: true,
+        subItems: [
+            {
+                name: "Comprehensive Analytics",
+                icon: <PieChart className="w-4 h-4" />,
+                path: "/inventory/sales/comprehensive",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Analytics",
+                icon: <LineChart className="w-4 h-4" />,
+                path: "/inventory/sales/analytics",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Summary",
+                icon: <BarChart3 className="w-4 h-4" />,
+                path: "/inventory/sales/summary",
+                roles: ["ADMIN", "MANAGER"],
+            },
+            {
+                name: "Sales List",
+                icon: <Activity className="w-4 h-4" />,
+                path: "/inventory/sales/list",
+                roles: ["ADMIN", "MANAGER", "STAFF"],
+            },
+
+        ],
+    },
+    {
+        name: "Inventory Alerts",
         icon: <Bell className="w-5 h-5" />,
         path: "/inventory/alerts",
         roles: ["ADMIN", "MANAGER", "STAFF"],
