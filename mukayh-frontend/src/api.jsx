@@ -1013,6 +1013,17 @@ export const supplierOrderService = {
 };
 
 
+export const accountantService = {
+    async getOverview() {
+        try {
+            const res = await api.get("/accountant/overview/");
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    }
+};
+
 export const productService = {
     async getTopSellingMaterials(params = {}) {
         try {

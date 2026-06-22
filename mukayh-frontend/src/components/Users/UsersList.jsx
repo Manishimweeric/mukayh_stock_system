@@ -89,7 +89,9 @@ const UsersList = () => {
         const roleConfig = {
             ADMIN: { color: 'bg-red-100 text-red-800', label: 'Administrator', icon: Shield },
             MANAGER: { color: 'bg-blue-100 text-blue-800', label: 'Manager', icon: User },
-            WAREHOUSE: { color: 'bg-green-100 text-green-800', label: 'Warehouse', icon: Users }
+            WAREHOUSE: { color: 'bg-green-100 text-green-800', label: 'Warehouse', icon: Users },
+            STOREKEEPER: { color: 'bg-green-100 text-green-800', label: 'Storekeeper', icon: Users },
+            ACCOUNTANT: { color: 'bg-amber-100 text-amber-800', label: 'Accountant', icon: User }
         };
 
         const config = roleConfig[role] || { color: 'bg-gray-100 text-gray-800', label: role, icon: User };
@@ -214,6 +216,8 @@ const UsersList = () => {
                                     <option value="ADMIN">Administrator</option>
                                     <option value="MANAGER">Manager</option>
                                     <option value="WAREHOUSE">Warehouse Staff</option>
+                                    <option value="STOREKEEPER">Storekeeper</option>
+                                    <option value="ACCOUNTANT">Accountant</option>
                                 </select>
                             </div>
                         </div>

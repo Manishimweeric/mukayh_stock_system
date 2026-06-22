@@ -16,7 +16,9 @@ import {
     EyeOff,
     Briefcase,
     Building,
-    Users
+    Users,
+    Warehouse,
+    Calculator
 } from 'lucide-react';
 
 export default function AddUserForm() {
@@ -84,7 +86,9 @@ export default function AddUserForm() {
     };
     const roleOptions = [
         { value: 'ADMIN', label: 'Administrator', icon: Shield },
-        { value: 'MANAGER', label: 'Manager', icon: Briefcase }
+        { value: 'MANAGER', label: 'Manager', icon: Briefcase },
+        { value: 'STOREKEEPER', label: 'Storekeeper', icon: Warehouse },
+        { value: 'ACCOUNTANT', label: 'Accountant', icon: Calculator }
     ];
 
     return (
@@ -312,6 +316,8 @@ export default function AddUserForm() {
                                         <div className={`px-3 py-1 rounded-full text-xs font-medium ${{
                                             'ADMIN': 'bg-red-100 text-red-800',
                                             'MANAGER': 'bg-blue-100 text-blue-800',
+                                            'STOREKEEPER': 'bg-green-100 text-green-800',
+                                            'ACCOUNTANT': 'bg-amber-100 text-amber-800',
                                         }[formData.role]}`}>
                                             {roleOptions.find(r => r.value === formData.role)?.label}
                                         </div>

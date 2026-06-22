@@ -33,6 +33,8 @@ import SupplierOrderReceive from './components/Supplier/SupplierOrderReceive.jsx
 import SupplierOrders from './components/Supplier/SupplierOrders.jsx';
 import ProductAnalytics from './components/Material/ProductAnalytics.jsx';
 import MaterialsAnalytics from './components/Material/MaterialsAnalytics.jsx';
+import AccountantOverview from './components/Accountant/AccountantOverview.jsx';
+import AccountantItemsList from './components/Accountant/AccountantItemsList.jsx';
 
 
 function App() {
@@ -72,6 +74,8 @@ function App() {
             <Route path="supplier-orders/supplier" element={<SupplierOrders />} />
             <Route path="analytics/products" element={<ProductAnalytics />} />
             <Route path="analytics/materials" element={<MaterialsAnalytics />} />
+            <Route path="accountant/overview" element={<AccountantOverview />} />
+            <Route path="accountant/items" element={<AccountantItemsList />} />
 
           </Route>
         </Routes>

@@ -15,7 +15,7 @@ const menuConfig = [
         name: "Dashboard",
         icon: <Home className="w-5 h-5" />,
         path: "/inventory/dashboard/admin",
-        roles: ["ADMIN", "MANAGER", "STAFF"],
+        roles: ["ADMIN", "MANAGER", "STAFF", "STOREKEEPER", "ACCOUNTANT"],
         hasSubItems: false,
     },
     {
@@ -63,44 +63,44 @@ const menuConfig = [
         name: "Inventory",
         icon: <Package className="w-5 h-5" />,
         path: "/inventory/items",
-        roles: ["ADMIN", "MANAGER", "STAFF"],
+        roles: ["ADMIN", "STOREKEEPER"],
         hasSubItems: true,
         subItems: [
             {
                 name: "All Items",
                 icon: <Boxes className="w-4 h-4" />,
                 path: "/inventory/items/list",
-                roles: ["ADMIN", "MANAGER", "STAFF"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
             {
                 name: "Add New Item",
                 icon: <Plus className="w-4 h-4" />,
                 path: "/inventory/item/add-new",
-                roles: ["ADMIN", "MANAGER"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
             {
                 name: "Low Stock",
                 icon: <AlertCircle className="w-4 h-4" />,
                 path: "/inventory/items/low-stock",
-                roles: ["ADMIN", "MANAGER", "STAFF"],
+                roles: ["ADMIN", "MANAGER", "STOREKEEPER"],
             },
             {
                 name: "Categories",
                 icon: <Tag className="w-4 h-4" />,
                 path: "/inventory/categories/list",
-                roles: ["ADMIN", "MANAGER"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
             {
                 name: "Inventory Analytics",
                 icon: <BarChart className="w-4 h-4" />,
                 path: "/inventory/analytics/products",
-                roles: ["ADMIN", "MANAGER"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
             {
                 name: "Materials Reports",
                 icon: <BarChart className="w-4 h-4" />,
                 path: "/inventory/analytics/materials",
-                roles: ["ADMIN", "MANAGER"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
 
         ],
@@ -109,20 +109,20 @@ const menuConfig = [
         name: "Stock Movement",
         icon: <TrendingUp className="w-5 h-5" />,
         path: "/inventory/movements",
-        roles: ["ADMIN", "MANAGER", "STAFF"],
+        roles: ["ADMIN", "STAFF", "STOREKEEPER"],
         hasSubItems: true,
         subItems: [
             {
                 name: "All Movements",
                 icon: <Activity className="w-4 h-4" />,
                 path: "/inventory/stock/movement/list",
-                roles: ["ADMIN", "MANAGER", "STAFF"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
             {
                 name: "Stock In / Out",
                 icon: <Download className="w-4 h-4" />,
                 path: "/inventory/stock/movement",
-                roles: ["ADMIN", "MANAGER"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
 
         ],
@@ -132,7 +132,7 @@ const menuConfig = [
         name: "Sales Transactions",
         icon: <TrendingUp className="w-5 h-5" />,
         path: "/inventory/sales",
-        roles: ["ADMIN", "MANAGER", "STAFF"],
+        roles: ["ADMIN", "MANAGER", "STOREKEEPER"],
         hasSubItems: true,
         subItems: [
             {
@@ -157,7 +157,7 @@ const menuConfig = [
                 name: "Sales List",
                 icon: <Activity className="w-4 h-4" />,
                 path: "/inventory/sales/list",
-                roles: ["ADMIN", "MANAGER", "STAFF"],
+                roles: ["ADMIN", "MANAGER", "STOREKEEPER"],
             },
 
         ],
@@ -166,9 +166,24 @@ const menuConfig = [
         name: "Inventory Alerts",
         icon: <Bell className="w-5 h-5" />,
         path: "/inventory/alerts",
-        roles: ["ADMIN", "MANAGER", "STAFF"],
+        roles: ["ADMIN", "MANAGER", "STOREKEEPER",],
         hasSubItems: false,
     },
+    {
+        name: "All Items",
+        icon: <Boxes className="w-5 h-5" />,
+        path: "/inventory/accountant/items",
+        roles: ["ACCOUNTANT"],
+        hasSubItems: false,
+    },
+    {
+        name: "Accountant Overview",
+        icon: <FileText className="w-5 h-5" />,
+        path: "/inventory/accountant/overview",
+        roles: ["ADMIN", "ACCOUNTANT"],
+        hasSubItems: false,
+    },
+
 
 ];
 
@@ -343,6 +358,10 @@ const InventoryLayout = ({ activePage, onPageChange }) => {
                 return 'Inventory Manager';
             case 'STAFF':
                 return 'Inventory Staff';
+            case 'STOREKEEPER':
+                return 'Storekeeper';
+            case 'ACCOUNTANT':
+                return 'Accountant';
             default:
                 return role;
         }
