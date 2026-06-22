@@ -10,6 +10,8 @@ class User(AbstractUser):
         ('ADMIN', 'Administrator'),
         ('MANAGER', 'Manager'),
         ('WAREHOUSE', 'Warehouse Staff'),
+        ('STOREKEEPER', 'Storekeeper'),
+        ('ACCOUNTANT', 'Accountant'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='WAREHOUSE')
     phone = models.CharField(max_length=15, blank=True)

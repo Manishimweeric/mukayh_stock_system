@@ -17,7 +17,7 @@ from .models import (
     DemandForecast, Alert, StockAnalytics, User, Customer, Sale, SaleItem
 )
 from .serializers import *
-from .permissions import IsAdminOrManager, IsAdminOnly
+from .permissions import IsAdminOrManager, IsAdminOnly, IsAccountant
 
 
 # Authentication Views
@@ -546,6 +546,30 @@ def dashboard_stats(request):
     
     serializer = DashboardStatsSerializer(data)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAccountant])
+def accountant_overview(request):
+    """Read-only view for accountants: all supplier orders, stock-in, and returns"""
+    supplier_orders = SupplierOrder.objects.select_related(
+        'supplier', 'created_by'
+    ).prefetch_related('items').all()
+
+    stock_in = StockMovement.objects.select_related(
+        'material', 'created_by'
+    ).filter(movement_type='IN')
+
+    returns = StockMovement.objects.select_related(
+        'material', 'created_by'
+    ).filter(movement_type='RETURN')
+
+    data = {
+        'supplier_orders': SupplierOrderDetailSerializer(supplier_orders, many=True).data,
+        'stock_in': StockMovementSerializer(stock_in, many=True).data,
+        'returns': StockMovementSerializer(returns, many=True).data,
+    }
+    return Response(data)
 
 
 @api_view(['GET'])

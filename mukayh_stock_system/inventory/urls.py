@@ -31,6 +31,7 @@ urlpatterns = [
     path('dashboard/stats/', views.dashboard_stats, name='dashboard-stats'),
     path('dashboard/trends/', views.stock_trends, name='stock-trends'),
     path('dashboard/profit-analysis/', views.profit_analysis, name='profit-analysis'),
+    path('accountant/overview/', views.accountant_overview, name='accountant-overview'),
     
     # Material profit analysis
     path('materials/profit-analysis/', views.MaterialViewSet.as_view({'get': 'profit_analysis'}), name='materials-profit-analysis'),

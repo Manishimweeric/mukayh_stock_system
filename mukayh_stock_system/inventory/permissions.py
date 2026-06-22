@@ -30,6 +30,16 @@ class IsWarehouseStaff(permissions.BasePermission):
         return request.user.role in ['ADMIN', 'MANAGER', 'WAREHOUSE']
 
 
+class IsAccountant(permissions.BasePermission):
+    """
+    Permission class that allows administrators, managers, and accountants
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.role in ['ADMIN', 'MANAGER', 'ACCOUNTANT']
+
+
 class ReadOnly(permissions.BasePermission):
     """
     Read-only permission for all authenticated users
