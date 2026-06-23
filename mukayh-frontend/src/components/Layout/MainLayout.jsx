@@ -90,13 +90,13 @@ const menuConfig = [
                 name: "Add New Item",
                 icon: <Plus className="w-4 h-4" />,
                 path: "/inventory/item/add-new",
-                roles: ["ADMIN", "STOREKEEPER"],
+                roles: ["ADMIN", "STOREKEEPER",],
             },
             {
                 name: "Low Stock",
                 icon: <AlertCircle className="w-4 h-4" />,
                 path: "/inventory/items/low-stock",
-                roles: ["ADMIN", "MANAGER", "STOREKEEPER"],
+                roles: ["ADMIN", "STOREKEEPER"],
             },
             {
                 name: "Categories",

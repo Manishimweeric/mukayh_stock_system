@@ -252,11 +252,11 @@ class MaterialViewSet(viewsets.ModelViewSet):
         return Response(data)
     
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy']:
             return [IsAdminOrManager()]
         return super().get_permissions()
-    
-    
+
+
     @action(detail=False, methods=['get'], url_path='filter')
     def filter_materials(self, request):
         """Filter materials by various criteria"""
