@@ -1,0 +1,3 @@
+- Wen we promoting  the Senior Roll Admission Date must be updated
+- when were creating a advocat must select a First Admission Date  and using it to create a reg number 
+-

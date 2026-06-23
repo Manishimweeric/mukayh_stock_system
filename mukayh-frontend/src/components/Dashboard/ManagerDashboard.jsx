@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
-    TrendingUp, TrendingDown, Package, DollarSign, ShoppingCart,
-    AlertCircle, Truck, Users, ArrowUp, ArrowDown, Calendar,
-    RefreshCw, Eye, Download, Printer, ChevronRight,
-    Activity, BarChart, PieChart, Clock, CheckCircle, XCircle,
-    Zap, Target, Award, Star, MessageCircle, Bell, Info
+    TrendingUp, Package, DollarSign,
+    AlertCircle, Truck, Users, ArrowUp, ArrowDown,
+    Activity, BarChart, PieChart, Star, Bell
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { dashboardService } from '../../api';
 
-const DashboardPage = () => {
+const ManagerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         inventory: {
@@ -58,7 +55,6 @@ const DashboardPage = () => {
             if (result.success) {
                 setStats(result.data);
                 setLastUpdated(new Date());
-                console.log('Dashboard data loaded:', result.data);
             } else {
                 toast.error('Failed to load dashboard data');
             }
@@ -108,8 +104,6 @@ const DashboardPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-
-
             <div className="">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
@@ -187,10 +181,9 @@ const DashboardPage = () => {
                             </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <Link to="/inventory/items/low-stock" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-                                View Alerts
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
+                            <span className="text-sm text-gray-500">
+                                {stats.inventory.low_stock_count + stats.inventory.overstock_count} items need attention
+                            </span>
                         </div>
                     </div>
 
@@ -206,12 +199,6 @@ const DashboardPage = () => {
                             <div className="p-3 bg-purple-100 rounded-lg">
                                 <Truck className="w-6 h-6 text-purple-600" />
                             </div>
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                            <Link to="/inventory/supplier-orders/list" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-                                Manage Orders
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
                         </div>
                     </div>
                 </div>
@@ -358,12 +345,6 @@ const DashboardPage = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                            <Link to="/inventory/sales/list" className="text-sm text-blue-600 hover:text-blue-800 flex items-center justify-end">
-                                View All Sales
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
-                        </div>
                     </div>
                 </div>
 
@@ -402,12 +383,6 @@ const DashboardPage = () => {
                                     <p className="text-xs text-gray-400 mt-2">Top customers will appear here once you make sales</p>
                                 </div>
                             )}
-                        </div>
-                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                            <Link to="/inventory/customers/list" className="text-sm text-blue-600 hover:text-blue-800 flex items-center justify-end">
-                                View All Customers
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
                         </div>
                     </div>
 
@@ -465,11 +440,9 @@ const DashboardPage = () => {
                         </div>
                     </div>
                 </div>
-
-
             </div>
         </div>
     );
 };
 
-export default DashboardPage;
+export default ManagerDashboard;

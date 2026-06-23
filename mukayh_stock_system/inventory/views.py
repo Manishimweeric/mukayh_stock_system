@@ -93,7 +93,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy']:
             return [IsAdminOrManager()]
         return super().get_permissions()
 
@@ -1631,8 +1631,15 @@ class CustomerAnalyticsViewSet(viewsets.ViewSet):
 
 class SupplierOrderViewSet(viewsets.ModelViewSet):
     """ViewSet for managing supplier orders"""
-    queryset = SupplierOrder.objects.select_related('supplier', 'created_by').prefetch_related('items').all()
+    queryset = SupplierOrder.objects.select_related(
+        'supplier', 'created_by', 'accountant_reviewed_by'
+    ).prefetch_related('items').all()
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == 'accountant_review':
+            return [IsAccountant()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -1746,16 +1753,50 @@ class SupplierOrderViewSet(viewsets.ModelViewSet):
     def get_orders_by_supplier(self, request, supplier_id=None):
         """
         Get all supplier orders for a specific supplier.
+        Only orders approved by the accountant are visible to the supplier.
         """
         try:
-            orders = self.get_queryset().filter(supplier_id=supplier_id)
+            orders = self.get_queryset().filter(
+                supplier_id=supplier_id, accountant_status='APPROVED'
+            )
             serializer = self.get_serializer(orders, many=True)
             return Response(serializer.data)
-        except Exception as e:  
+        except Exception as e:
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=True, methods=['patch'], url_path='accountant-review')
+    def accountant_review(self, request, pk=None):
+        """
+        Accountant approves or rejects a supplier order.
+        The order only becomes visible to the supplier once approved.
+        """
+        order = self.get_object()
+        decision = request.data.get('decision')
+        note = request.data.get('note', '').strip()
+
+        if decision not in ['APPROVED', 'REJECTED']:
+            return Response(
+                {'error': "decision must be 'APPROVED' or 'REJECTED'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if decision == 'REJECTED' and not note:
+            return Response(
+                {'error': 'A note is required when rejecting an order'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        order.accountant_status = decision
+        order.accountant_note = note
+        order.accountant_reviewed_by = request.user
+        order.accountant_reviewed_at = timezone.now()
+        order.save()
+
+        serializer = SupplierOrderDetailSerializer(order)
+        return Response(serializer.data)
 
 
     @action(detail=True, methods=['patch'], url_path='update-status')
@@ -1863,6 +1904,7 @@ def dashboard_summary(request):
     supplier_orders = SupplierOrder.objects.filter(order_date__date__gte=start_of_month)
     pending_orders = supplier_orders.filter(status='PENDING').count()
     delivered_orders = supplier_orders.filter(status='DELIVERED').count()
+    total_orders = SupplierOrder.objects.count()
 
    
     # 8. Monthly Sales Trend
@@ -1912,6 +1954,7 @@ def dashboard_summary(request):
         'supplier_orders': {
             'pending_orders': pending_orders,
             'delivered_orders': delivered_orders,
+            'total_orders': total_orders,
         },
         'monthly_sales_trend': monthly_sales_trend,
         'stock_value_trend': stock_value_trend,

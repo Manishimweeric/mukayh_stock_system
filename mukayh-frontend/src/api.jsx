@@ -1010,6 +1010,15 @@ export const supplierOrderService = {
             return handleError(error);
         }
     },
+
+    async accountantReviewOrder(orderId, { decision, note = '' }) {
+        try {
+            const res = await api.patch(`/supplier-orders/${orderId}/accountant-review/`, { decision, note });
+            return { success: true, data: res.data };
+        } catch (error) {
+            return handleError(error);
+        }
+    },
 };
 
 

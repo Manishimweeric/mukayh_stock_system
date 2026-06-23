@@ -758,6 +758,7 @@ class SupplierOrderListSerializer(serializers.ModelSerializer):
     """Serializer for listing supplier orders with summary info"""
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    accountant_reviewed_by_name = serializers.CharField(source='accountant_reviewed_by.get_full_name', read_only=True)
     items_count = serializers.SerializerMethodField()
     is_overdue = serializers.BooleanField(read_only=True)
     is_fully_delivered = serializers.BooleanField(read_only=True)
@@ -769,9 +770,14 @@ class SupplierOrderListSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_name', 'order_date',
             'expected_delivery_date', 'actual_delivery_date',
             'status', 'total_quantity', 'total_cost',
+            'accountant_status', 'accountant_note',
+            'accountant_reviewed_by', 'accountant_reviewed_by_name', 'accountant_reviewed_at',
             'items_count', 'is_overdue', 'is_fully_delivered'
         ]
-        read_only_fields = ['id', 'order_number', 'created_by', 'order_date', 'total_quantity', 'total_cost']
+        read_only_fields = [
+            'id', 'order_number', 'created_by', 'order_date', 'total_quantity', 'total_cost',
+            'accountant_status', 'accountant_note', 'accountant_reviewed_by', 'accountant_reviewed_at'
+        ]
 
     def get_items_count(self, obj):
         return obj.items.count()
@@ -780,6 +786,7 @@ class SupplierOrderDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for supplier orders with items"""
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    accountant_reviewed_by_name = serializers.CharField(source='accountant_reviewed_by.get_full_name', read_only=True)
     items = SupplierOrderItemSerializer(many=True, read_only=True)
     is_overdue = serializers.BooleanField(read_only=True)
     is_fully_delivered = serializers.BooleanField(read_only=True)
@@ -791,9 +798,14 @@ class SupplierOrderDetailSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_name', 'order_date',
             'expected_delivery_date', 'actual_delivery_date',
             'status', 'total_quantity', 'total_cost',
+            'accountant_status', 'accountant_note',
+            'accountant_reviewed_by', 'accountant_reviewed_by_name', 'accountant_reviewed_at',
             'notes', 'items', 'is_overdue', 'is_fully_delivered'
         ]
-        read_only_fields = ['id', 'order_number', 'created_by', 'order_date', 'total_quantity', 'total_cost']
+        read_only_fields = [
+            'id', 'order_number', 'created_by', 'order_date', 'total_quantity', 'total_cost',
+            'accountant_status', 'accountant_note', 'accountant_reviewed_by', 'accountant_reviewed_at'
+        ]
 
 class SupplierOrderCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating supplier orders with items"""

@@ -63,15 +63,16 @@ const LoginPage = () => {
                         toast.success('Welcome Admin! Login successful.');
                         break;
                     case 'MANAGER':
-                        navigate("/inventory/dashboard/admin");
+                        navigate("/inventory/dashboard/manager");
                         toast.success('Welcome Manager! Login successful.');
                         break;
                     case 'STOREKEEPER':
-                        navigate("/inventory/dashboard/admin");
+                    case 'STAFF':
+                        navigate("/inventory/dashboard/operations");
                         toast.success('Welcome back! Login successful.');
                         break;
                     case 'ACCOUNTANT':
-                        navigate("/inventory/dashboard/admin");
+                        navigate("/inventory/accountant/overview");
                         toast.success('Welcome back! Login successful.');
                         break;
                     case 'SUPPLIER':

@@ -20,6 +20,8 @@ import DemandForecast from './components/DemandForecast/DemandForecast.jsx';
 
 import AlertsList from './components/Alerts/AlertsList.jsx';
 import DashboardAdmin from './components/Dashboard/dashboard.jsx';
+import ManagerDashboard from './components/Dashboard/ManagerDashboard.jsx';
+import OperationsDashboard from './components/Dashboard/OperationsDashboard.jsx';
 import CustomersList from './components/Customers/CustomersList.jsx';
 import AddCustomerForm from './components/Customers/AddCustomerForm.jsx';
 import SalesList from './components/Sales/SalesList.jsx';
@@ -48,6 +50,8 @@ function App() {
           <Route path="/inventory" element={<Dashboard />}>
             <Route path="users/add-new" element={<AddUser />} />
             <Route path="dashboard/admin" element={<DashboardAdmin />} />
+            <Route path="dashboard/manager" element={<ManagerDashboard />} />
+            <Route path="dashboard/operations" element={<OperationsDashboard />} />
             <Route path="users/list" element={<UsersList />} />
             <Route path="categories/add" element={<AddCategory />} />
             <Route path="categories/list" element={<CategoriesList />} />

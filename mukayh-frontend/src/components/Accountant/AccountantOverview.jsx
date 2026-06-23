@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
     Wallet, Search, RefreshCw, X, Calendar, User, Package,
-    ArrowUp, RotateCcw, ShoppingBag, Truck, DollarSign, Scale
+    ArrowUp, RotateCcw, ShoppingBag, Truck, DollarSign, Scale,
+    CheckCircle, XCircle, Loader
 } from 'lucide-react';
-import { accountantService } from '../../api';
+import { accountantService, supplierOrderService } from '../../api';
 
 const TABS = [
     { key: 'supplier_orders', label: 'Requests to Supplier', icon: ShoppingBag },
@@ -20,12 +21,21 @@ const STATUS_COLORS = {
     CANCELLED: 'bg-red-100 text-red-800',
 };
 
+const ACCOUNTANT_STATUS_COLORS = {
+    PENDING: 'bg-yellow-100 text-yellow-800',
+    APPROVED: 'bg-green-100 text-green-800',
+    REJECTED: 'bg-red-100 text-red-800',
+};
+
 const AccountantOverview = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('supplier_orders');
     const [searchTerm, setSearchTerm] = useState('');
     const [overview, setOverview] = useState({ supplier_orders: [], stock_in: [], returns: [] });
     const [selectedRecord, setSelectedRecord] = useState(null);
+    const [reviewModal, setReviewModal] = useState(null);
+    const [reviewNote, setReviewNote] = useState('');
+    const [processingReview, setProcessingReview] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -44,6 +54,37 @@ const AccountantOverview = () => {
             toast.error(result.message || 'Failed to load accountant overview');
         }
         setLoading(false);
+    };
+
+    const openReviewModal = (order, decision) => {
+        setReviewModal({ order, decision });
+        setReviewNote('');
+    };
+
+    const submitReview = async () => {
+        if (!reviewModal) return;
+        const { order, decision } = reviewModal;
+
+        if (decision === 'REJECTED' && !reviewNote.trim()) {
+            toast.error('Please provide a note explaining the rejection');
+            return;
+        }
+
+        setProcessingReview(true);
+        const result = await supplierOrderService.accountantReviewOrder(order.id, {
+            decision,
+            note: reviewNote.trim(),
+        });
+        setProcessingReview(false);
+
+        if (result.success) {
+            toast.success(decision === 'APPROVED' ? 'Order approved' : 'Order rejected');
+            setReviewModal(null);
+            setReviewNote('');
+            fetchData();
+        } else {
+            toast.error(result.message || 'Failed to submit review');
+        }
     };
 
     const formatCurrency = (amount) => {
@@ -247,19 +288,20 @@ const AccountantOverview = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Accountant Review</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredRecords.map((order) => (
-                                    <tr
-                                        key={order.id}
-                                        className="hover:bg-gray-50 cursor-pointer"
-                                        onClick={() => setSelectedRecord({ type: 'supplier_orders', data: order })}
-                                    >
-                                        <td className="px-6 py-3">
+                                    <tr key={order.id} className="hover:bg-gray-50">
+                                        <td
+                                            className="px-6 py-3 cursor-pointer"
+                                            onClick={() => setSelectedRecord({ type: 'supplier_orders', data: order })}
+                                        >
                                             <div className="text-sm font-medium text-gray-900">{order.name}</div>
                                             <div className="text-xs text-gray-500">{order.order_number}</div>
                                         </td>
@@ -269,9 +311,38 @@ const AccountantOverview = () => {
                                                 {order.status}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${ACCOUNTANT_STATUS_COLORS[order.accountant_status] || 'bg-gray-100 text-gray-800'}`}>
+                                                {order.accountant_status || 'PENDING'}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-3 text-sm text-gray-900">{order.total_quantity}</td>
                                         <td className="px-6 py-3 text-sm font-medium text-gray-900">{formatCurrency(order.total_cost)}</td>
                                         <td className="px-6 py-3 text-sm text-gray-500">{formatDate(order.order_date)}</td>
+                                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                                            {(!order.accountant_status || order.accountant_status === 'PENDING') ? (
+                                                <div className="flex items-center justify-end space-x-2">
+                                                    <button
+                                                        onClick={() => openReviewModal(order, 'APPROVED')}
+                                                        className="flex items-center px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                                                        title="Approve Order"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4 mr-1.5" />
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openReviewModal(order, 'REJECTED')}
+                                                        className="flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                                        title="Reject Order"
+                                                    >
+                                                        <XCircle className="w-4 h-4 mr-1.5" />
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">Reviewed</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -367,7 +438,26 @@ const AccountantOverview = () => {
                                             <span className="text-xs text-gray-500 uppercase">Total Cost</span>
                                             <p className="font-semibold text-blue-600">{formatCurrency(selectedRecord.data.total_cost)}</p>
                                         </div>
+                                        <div>
+                                            <span className="text-xs text-gray-500 uppercase">Accountant Review</span>
+                                            <p className="font-semibold text-gray-900">{selectedRecord.data.accountant_status || 'PENDING'}</p>
+                                        </div>
+                                        {selectedRecord.data.accountant_status !== 'PENDING' && (
+                                            <div>
+                                                <span className="text-xs text-gray-500 uppercase">Reviewed By</span>
+                                                <p className="font-semibold text-gray-900">
+                                                    {selectedRecord.data.accountant_reviewed_by_name || 'Unknown'} on {formatDate(selectedRecord.data.accountant_reviewed_at)}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {selectedRecord.data.accountant_note && (
+                                        <div>
+                                            <span className="text-xs text-gray-500 uppercase">Accountant Note</span>
+                                            <p className="text-gray-900 mt-1">{selectedRecord.data.accountant_note}</p>
+                                        </div>
+                                    )}
 
                                     {selectedRecord.data.notes && (
                                         <div>
@@ -466,6 +556,66 @@ const AccountantOverview = () => {
                                 className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {reviewModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                {reviewModal.decision === 'APPROVED' ? 'Approve Order' : 'Reject Order'}
+                            </h3>
+                            <button
+                                onClick={() => setReviewModal(null)}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-gray-600">
+                                {reviewModal.decision === 'APPROVED'
+                                    ? `Are you sure you want to approve "${reviewModal.order.name}" (${reviewModal.order.order_number})? The supplier will be able to see this order once approved.`
+                                    : `Reject "${reviewModal.order.name}" (${reviewModal.order.order_number})? Please explain why.`}
+                            </p>
+
+                            {reviewModal.decision === 'REJECTED' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Note <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        value={reviewNote}
+                                        onChange={(e) => setReviewNote(e.target.value)}
+                                        rows="4"
+                                        placeholder="Explain why this order is being rejected..."
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                            <button
+                                onClick={() => setReviewModal(null)}
+                                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitReview}
+                                disabled={processingReview}
+                                className={`flex items-center px-4 py-2 rounded-lg text-white disabled:opacity-50 ${
+                                    reviewModal.decision === 'APPROVED' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                                }`}
+                            >
+                                {processingReview && <Loader className="w-4 h-4 mr-2 animate-spin" />}
+                                {reviewModal.decision === 'APPROVED' ? 'Yes, Approve' : 'Reject'}
                             </button>
                         </div>
                     </div>

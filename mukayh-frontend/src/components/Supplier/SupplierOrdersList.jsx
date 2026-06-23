@@ -206,6 +206,22 @@ const SupplierOrdersList = () => {
         );
     };
 
+    const getAccountantStatusBadge = (accountantStatus) => {
+        const config = {
+            'PENDING': { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+            'APPROVED': { color: 'bg-green-100 text-green-800', icon: CheckCircle },
+            'REJECTED': { color: 'bg-red-100 text-red-800', icon: AlertCircle },
+        }[accountantStatus || 'PENDING'];
+        const Icon = config.icon;
+
+        return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+                <Icon className="w-3 h-3 mr-1" />
+                {accountantStatus || 'PENDING'}
+            </span>
+        );
+    };
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('rw-RW', {
             style: 'currency',
@@ -486,6 +502,9 @@ const SupplierOrdersList = () => {
                                             Status
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Accountant Review
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Total Cost
                                         </th>
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -535,6 +554,9 @@ const SupplierOrdersList = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {getStatusBadge(order.status)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {getAccountantStatusBadge(order.accountant_status)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-sm font-medium text-gray-900">
@@ -797,6 +819,25 @@ const SupplierOrdersList = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Accountant Review */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                                    <DollarSign className="w-5 h-5 mr-2 text-blue-600" />
+                                    Accountant Review
+                                </h3>
+                                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                                    <div>{getAccountantStatusBadge(selectedOrder.accountant_status)}</div>
+                                    {selectedOrder.accountant_status && selectedOrder.accountant_status !== 'PENDING' && (
+                                        <p className="text-sm text-gray-600">
+                                            By {selectedOrder.accountant_reviewed_by_name || 'Unknown'} on {formatDate(selectedOrder.accountant_reviewed_at)}
+                                        </p>
+                                    )}
+                                    {selectedOrder.accountant_note && (
+                                        <p className="text-gray-700 mt-2">{selectedOrder.accountant_note}</p>
+                                    )}
+                                </div>
+                            </div>
 
                             {/* Notes */}
                             {selectedOrder.notes && (

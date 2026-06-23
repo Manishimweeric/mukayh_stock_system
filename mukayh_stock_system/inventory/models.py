@@ -19,7 +19,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     groups = models.ManyToManyField(
         'auth.Group',
         verbose_name='groups',
@@ -509,6 +509,12 @@ class SupplierOrder(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
+    ACCOUNTANT_STATUS_CHOICES = [
+        ('PENDING', 'Pending Review'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+
     name = models.CharField(max_length=200, verbose_name="Order Name", help_text="A descriptive name for the order (e.g., 'Monthly Cement Order')")
     order_number = models.CharField(max_length=50, unique=True, verbose_name="Order Number")
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name='orders')
@@ -518,6 +524,14 @@ class SupplierOrder(models.Model):
     actual_delivery_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     notes = models.TextField(blank=True)
+
+    # Accountant review gates whether the supplier can see the order
+    accountant_status = models.CharField(max_length=20, choices=ACCOUNTANT_STATUS_CHOICES, default='PENDING')
+    accountant_note = models.TextField(blank=True)
+    accountant_reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='accountant_reviewed_orders'
+    )
+    accountant_reviewed_at = models.DateTimeField(null=True, blank=True)
 
     # Totals
     total_quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0)

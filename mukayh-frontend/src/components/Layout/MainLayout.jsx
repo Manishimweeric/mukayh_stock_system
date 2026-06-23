@@ -15,7 +15,21 @@ const menuConfig = [
         name: "Dashboard",
         icon: <Home className="w-5 h-5" />,
         path: "/inventory/dashboard/admin",
-        roles: ["ADMIN", "MANAGER", "STAFF", "STOREKEEPER", "ACCOUNTANT"],
+        roles: ["ADMIN"],
+        hasSubItems: false,
+    },
+    {
+        name: "Dashboard",
+        icon: <Home className="w-5 h-5" />,
+        path: "/inventory/dashboard/manager",
+        roles: ["MANAGER"],
+        hasSubItems: false,
+    },
+    {
+        name: "Dashboard",
+        icon: <Home className="w-5 h-5" />,
+        path: "/inventory/dashboard/operations",
+        roles: ["STAFF", "STOREKEEPER"],
         hasSubItems: false,
     },
     {

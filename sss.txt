@@ -1,0 +1,48 @@
+comments 
+=======
+
+1.adding patric to cleating a claim
+2.change  documents to Incoming/outgoing
+3.adding  to admin add advocate in  RCS list and  change the  date  ot visiting 
+4.Adding click on  name and email to view detail  
+5.To adding to edit advocate  on admin 
+6. advocate only be active on defendant 
+7.when  we schedure mediation the all claimant or advocate assigned be notif
+
+Status  
+Subumited
+Under_Review 
+Under mediation
+Mediation_Completed
+CLosed
+Refered to discipline
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

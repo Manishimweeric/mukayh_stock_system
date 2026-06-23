@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
-    TrendingUp, TrendingDown, Package, DollarSign, ShoppingCart,
-    AlertCircle, Truck, Users, ArrowUp, ArrowDown, Calendar,
-    RefreshCw, Eye, Download, Printer, ChevronRight,
-    Activity, BarChart, PieChart, Clock, CheckCircle, XCircle,
-    Zap, Target, Award, Star, MessageCircle, Bell, Info
+    TrendingUp, Package, DollarSign, ShoppingCart,
+    AlertCircle, ArrowUp, ArrowDown,
+    Activity, BarChart, PieChart, Star, Bell
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { dashboardService } from '../../api';
 
-const DashboardPage = () => {
+const OperationsDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         inventory: {
@@ -35,17 +32,9 @@ const DashboardPage = () => {
             total_out: 0
         },
         top_materials: [],
-        top_customers: [],
-        supplier_orders: {
-            pending_orders: 0,
-            delivered_orders: 0,
-            total_orders: 0
-        },
         monthly_sales_trend: [],
         stock_value_trend: []
     });
-
-    const [lastUpdated, setLastUpdated] = useState(new Date());
 
     useEffect(() => {
         fetchDashboardData();
@@ -57,8 +46,6 @@ const DashboardPage = () => {
             const result = await dashboardService.getDashboardSummary();
             if (result.success) {
                 setStats(result.data);
-                setLastUpdated(new Date());
-                console.log('Dashboard data loaded:', result.data);
             } else {
                 toast.error('Failed to load dashboard data');
             }
@@ -108,8 +95,6 @@ const DashboardPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-
-
             <div className="">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
@@ -128,12 +113,9 @@ const DashboardPage = () => {
                             </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">Potential Profit</span>
-                                <span className="font-semibold text-green-600">
-                                    {formatCurrency(stats.inventory.potential_profit)}
-                                </span>
-                            </div>
+                            <span className="text-sm text-gray-500">
+                                {formatNumber(stats.inventory.total_materials)} items tracked
+                            </span>
                         </div>
                     </div>
 
@@ -187,31 +169,32 @@ const DashboardPage = () => {
                             </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <Link to="/inventory/items/low-stock" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-                                View Alerts
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
+                            <span className="text-sm text-gray-500">
+                                {stats.inventory.low_stock_count + stats.inventory.overstock_count} items need attention
+                            </span>
                         </div>
                     </div>
 
-                    {/* Orders Card */}
+                    {/* Total Sales Card */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500 font-medium">Supplier Orders</p>
+                                <p className="text-sm text-gray-500 font-medium">Total Sales</p>
                                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                                    {stats.supplier_orders.total_orders}
+                                    {formatNumber(stats.sales.total_sales)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Avg margin: {stats.sales.avg_profit_margin}%
                                 </p>
                             </div>
-                            <div className="p-3 bg-purple-100 rounded-lg">
-                                <Truck className="w-6 h-6 text-purple-600" />
+                            <div className="p-3 bg-orange-100 rounded-lg">
+                                <ShoppingCart className="w-6 h-6 text-orange-600" />
                             </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <Link to="/inventory/supplier-orders/list" className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-                                Manage Orders
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
+                            <span className="text-sm text-gray-500">
+                                Total revenue: {formatCurrency(stats.sales.total_revenue)}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -253,6 +236,9 @@ const DashboardPage = () => {
                                 </div>
                             </div>
                             <Activity className="w-10 h-10 text-green-600 opacity-50" />
+                        </div>
+                        <div className="mt-2">
+                            <p className="text-xs text-green-700">Items moved in and out of stock</p>
                         </div>
                     </div>
 
@@ -358,118 +344,65 @@ const DashboardPage = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                            <Link to="/inventory/sales/list" className="text-sm text-blue-600 hover:text-blue-800 flex items-center justify-end">
-                                View All Sales
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
-                        </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Top Customers */}
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                                <Users className="w-5 h-5 mr-2 text-blue-600" />
-                                Top Customers
-                            </h3>
-                        </div>
-                        <div className="divide-y divide-gray-200">
-                            {stats.top_customers && stats.top_customers.length > 0 ? (
-                                stats.top_customers.map((customer, index) => (
-                                    <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
-                                                    <p className="font-medium text-gray-900">{customer.customer__name}</p>
-                                                </div>
-                                                <p className="text-xs text-gray-500 mt-1">{customer.customer__phone_number}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-semibold text-green-600">{formatCurrency(customer.total_revenue)}</p>
-                                                <p className="text-xs text-gray-500">{customer.total_sales} purchases</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-8">
-                                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                    <p className="text-gray-500">No customer data available</p>
-                                    <p className="text-xs text-gray-400 mt-2">Top customers will appear here once you make sales</p>
-                                </div>
-                            )}
-                        </div>
-                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                            <Link to="/inventory/customers/list" className="text-sm text-blue-600 hover:text-blue-800 flex items-center justify-end">
-                                View All Customers
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </Link>
-                        </div>
+                {/* Stock Movement Trend (full width - no customer access for this role) */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                            <Activity className="w-5 h-5 mr-2 text-purple-600" />
+                            Stock Movement Trend
+                        </h3>
                     </div>
+                    <div className="p-6">
+                        {stats.stock_value_trend && stats.stock_value_trend.length > 0 ? (
+                            <div className="space-y-3">
+                                {stats.stock_value_trend.slice(0, 7).map((day, index) => {
+                                    const maxTotal = Math.max(...stats.stock_value_trend.map(d => (d.stock_in || 0) + (d.stock_out || 0)), 1);
+                                    const inPercentage = ((day.stock_in || 0) / maxTotal) * 100;
+                                    const outPercentage = ((day.stock_out || 0) / maxTotal) * 100;
 
-                    {/* Stock Movement Trend */}
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                                <Activity className="w-5 h-5 mr-2 text-purple-600" />
-                                Stock Movement Trend
-                            </h3>
-                        </div>
-                        <div className="p-6">
-                            {stats.stock_value_trend && stats.stock_value_trend.length > 0 ? (
-                                <div className="space-y-3">
-                                    {stats.stock_value_trend.slice(0, 7).map((day, index) => {
-                                        const maxTotal = Math.max(...stats.stock_value_trend.map(d => (d.stock_in || 0) + (d.stock_out || 0)), 1);
-                                        const inPercentage = ((day.stock_in || 0) / maxTotal) * 100;
-                                        const outPercentage = ((day.stock_out || 0) / maxTotal) * 100;
-
-                                        return (
-                                            <div key={index} className="flex items-center justify-between text-sm">
-                                                <span className="text-gray-600 w-24">{formatDate(day.day)}</span>
-                                                <div className="flex-1 mx-4">
-                                                    <div className="flex space-x-1">
-                                                        <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                            <div
-                                                                className="bg-green-500 rounded-full h-2 transition-all"
-                                                                style={{ width: `${inPercentage}%` }}
-                                                            ></div>
-                                                        </div>
-                                                        <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                            <div
-                                                                className="bg-red-500 rounded-full h-2 transition-all"
-                                                                style={{ width: `${outPercentage}%` }}
-                                                            ></div>
-                                                        </div>
+                                    return (
+                                        <div key={index} className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600 w-24">{formatDate(day.day)}</span>
+                                            <div className="flex-1 mx-4">
+                                                <div className="flex space-x-1">
+                                                    <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className="bg-green-500 rounded-full h-2 transition-all"
+                                                            style={{ width: `${inPercentage}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className="bg-red-500 rounded-full h-2 transition-all"
+                                                            style={{ width: `${outPercentage}%` }}
+                                                        ></div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right w-20">
-                                                    <span className="text-green-600 text-xs">+{formatNumber(day.stock_in || 0)}</span>
-                                                    <span className="text-gray-400 mx-1">/</span>
-                                                    <span className="text-red-600 text-xs">-{formatNumber(day.stock_out || 0)}</span>
-                                                </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                    <p className="text-gray-500">No stock movement data available</p>
-                                    <p className="text-xs text-gray-400 mt-2">Stock movements will appear here when items are added or sold</p>
-                                </div>
-                            )}
-                        </div>
+                                            <div className="text-right w-20">
+                                                <span className="text-green-600 text-xs">+{formatNumber(day.stock_in || 0)}</span>
+                                                <span className="text-gray-400 mx-1">/</span>
+                                                <span className="text-red-600 text-xs">-{formatNumber(day.stock_out || 0)}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-500">No stock movement data available</p>
+                                <p className="text-xs text-gray-400 mt-2">Stock movements will appear here when items are added or sold</p>
+                            </div>
+                        )}
                     </div>
                 </div>
-
-
             </div>
         </div>
     );
 };
 
-export default DashboardPage;
+export default OperationsDashboard;
